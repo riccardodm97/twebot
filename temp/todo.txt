@@ -10,9 +10,9 @@ TODO :
     - caricare i dataset (train, val, test) in un pandas dataframe
     - unire i dataframe in un unico dataframe e aggiungere il campo split (train, val, test); aggiungere anche un idx 0...N
     - rimuovere le righe senza tweet 
-    - dividere il dataframe in due, tweet e account, entrambi identificati dall'id account ed entrambi con il campo 'label' 
+    - dividere il dataframe in due, tweet e account, entrambi identificati dall'id account ed entrambi con il campo 'label' e split 
     - tweet : 
-        - cercare pipeline di preprocessing che permettano di preservare la struttura del tweet anche in considerazione degli OOV su GloVe [RESOURCE]
+        - cercare pipeline di preprocessing che permettano di preservare la struttura del tweet anche in considerazione degli OOV su GloVe [1]
         - lstm per single tweet text (sentence embedding o ultimo state rnn ? sigmoid out ?) [RESOURCE]
         - decidere quali feature possono comporre i metadati dei tweet [RESOURCE]
         - espandere il dataframe con i metadati del tweet 
@@ -34,4 +34,7 @@ PERCORSO DEL PROGETTO
 
 
 RISORSE DI RIFERIMENTO 
-- topic -> [RESOURCE] 
+- 1 -> - https://nlp.stanford.edu/projects/glove/ (twitter non wiki)
+       - https://www.sciencedirect.com/science/article/pii/S1877050920300910?ref=pdf_download&fr=RR-2&rr=73d4c02e0d13bad0
+       - https://tweetnlp.org/resources/
+       - https://github.com/pedrada88/crossembeddings-twitter
