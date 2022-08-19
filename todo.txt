@@ -1,6 +1,0 @@
-TODO RNN:
-    - OOV:
-        1. Scegliere se eliminare tweet nel caso in cui le OOV in quel tweet siano superiori al 70% (?)
-        2. Scegliere se trasformare tutte le OOV in una stringa specifica (e.g. 'ooooo')
-    - Majority voting?
-    - Controllare che i dati passati al modello e l'elaborazione siano corrette
