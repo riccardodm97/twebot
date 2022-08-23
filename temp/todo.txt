@@ -5,6 +5,37 @@ TODO RNN:
     - Majority voting?
     - Controllare che i dati passati al modello e l'elaborazione siano corrette
 
+PREPROCESSING TODO
+togliere con replace quello che tweetTokenizer non fa bene (numeri, cashtag, email)
+repleacare link perchè senno le emoticon sballano 
+repleacare emoji, emoticon e flag (magari prendere la lista di emoticon da emote e fare is in )
+usare tweetTokenizer
+replaceare hashtag, handles, ecc 
+
+pre tokenization : 
+- cashtag -> stocks  
+- email -> email 
+- $number -> money
+- numeri_speciali -> number 
+- hashtag -> hashtag
+- handle -> tag
+
+- emoji -> emoji 
+post tokenization:
+- numeri -> number 
+- link 
+
+
+- emoticon -> emoticon 
+
+
+
+
+
+
+
+- quelli con troppi OOV eliminare 
+
 
 TODO : 
     - caricare i dataset (train, val, test) in un pandas dataframe

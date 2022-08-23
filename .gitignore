@@ -1,2 +1,3 @@
 .vscode
-/data/Twibot-20
+/data/*
+!/data/.gitkeep
