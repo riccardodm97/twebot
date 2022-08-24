@@ -5,35 +5,10 @@ TODO RNN:
     - Majority voting?
     - Controllare che i dati passati al modello e l'elaborazione siano corrette
 
-PREPROCESSING TODO
-togliere con replace quello che tweetTokenizer non fa bene (numeri, cashtag, email)
-repleacare link perchè senno le emoticon sballano 
-repleacare emoji, emoticon e flag (magari prendere la lista di emoticon da emote e fare is in )
-usare tweetTokenizer
-replaceare hashtag, handles, ecc 
 
-pre tokenization : 
-- cashtag -> stocks  
-- email -> email 
-- $number -> money
-- numeri -> number 
-- hashtag -> hashtag
-- handle -> tag
-
-- link -> url 
-- emoticon -> emoticon 
-- emoji -> emoji 
-post tokenization:
-
-
-
-
-
-
-
-
-
-- quelli con troppi OOV eliminare 
+PREPROCESSING TODO :
+- eliminare righe con troppi OOV o con troppe poche parole 
+- salvare il dataset preprocessato su file 
 
 
 TODO : 
@@ -54,6 +29,9 @@ TODO :
         - processing di ogni riga per creare le feature necessarie [RESOURCE]
         - random forest con user metadata + tweet output info da frozen network 
     - loggare i risultati da qualche parte (wandb?)
+
+IDEE :
+- bias dell'ultimo layer -> ratio positive e negative labels 
 
 
 PERCORSO DEL PROGETTO 
