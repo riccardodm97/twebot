@@ -16,17 +16,16 @@ pre tokenization :
 - cashtag -> stocks  
 - email -> email 
 - $number -> money
-- numeri_speciali -> number 
+- numeri -> number 
 - hashtag -> hashtag
 - handle -> tag
 
+- link -> url 
+- emoticon -> emoticon 
 - emoji -> emoji 
 post tokenization:
-- numeri -> number 
-- link 
 
 
-- emoticon -> emoticon 
 
 
 
