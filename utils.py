@@ -1,28 +1,25 @@
 import gensim
-import gensim.downloader as gloader
-from gensim.models import KeyedVectors
+import random 
 
-glove_model_cached_path = DATA_FOLDER / 'glove_vectors.txt'
-glove_model_download_path = 'glove-twitter-200'
-
-def load_glove_emb(force_download = False):   
+def check_OOV_terms(embedding_model: gensim.models.keyedvectors.KeyedVectors, unique_words):
     """
-        Download the glove embedding model and returns it 
+        Given the embedding model and the unique words in the dataframe, determines the out-of-vocabulary words 
     """
-    emb_model = None
+    oov_words = []
+    idx_oov_words = []
 
-    if os.path.exists(glove_model_cached_path) and not force_download: 
-        print('found cached glove vectors in data folder, retrieving the file...')
-        emb_model = KeyedVectors.load_word2vec_format(glove_model_cached_path, binary=True)
-        print('vectors loaded')
+    if embedding_model is None:
+        print('WARNING: empty embeddings model')
 
-    else:
-        print('downloading glove embeddings...')        
-        emb_model = gloader.load(glove_model_download_path)
-
-        print('saving glove embeddings to file')  
-        emb_model.save_word2vec_format(glove_model_cached_path, binary=True)
+    else: 
+        for word in unique_words:
+            try: 
+                embedding_model[word]
+            except:
+                oov_words.append(word) 
         
-    return emb_model
-
-force_download = False      # to download glove model even if the vectors model has been already stored. Mainly for testing purposes
+        print("Total number of unique words in dataset:",len(unique_words))
+        print("Total OOV terms: {0} which is ({1:.2f}%)".format(len(oov_words), (float(len(oov_words)) / len(unique_words))*100))
+        print("Some OOV terms:",random.sample(oov_words,10))
+    
+    return oov_words
