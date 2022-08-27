@@ -6,15 +6,17 @@ TODO RNN:
     - Controllare che i dati passati al modello e l'elaborazione siano corrette
 
 
-PREPROCESSING TODO :
+ACTIVE TODO :
 - migliorare il preprocessing : 
   - stampare le oov e modificare il possibile 
   - rimuovere tutte le frasi non in inglese
   - rimuovere unicode 
   - separare parole con apostrofi o trattini 
   - rimuovere frasi troppo corte 
-- eliminare righe con troppi OOV o con troppe poche parole 
-- mantenere la % di oov simile tra i vari split altrimenti le metriche sono falsate 
+  - eliminare righe con troppi OOV o con troppe poche parole 
+  - mantenere la % di oov simile tra i vari split altrimenti le metriche sono falsate 
+- loggare risultati su wandb 
+- class imbalance -> inizializzare bias ultimo layer / weight nella loss 
 
 
 
