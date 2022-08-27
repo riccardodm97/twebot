@@ -1,12 +1,12 @@
 import gensim
 import random 
 
+
 def check_OOV_terms(embedding_model: gensim.models.keyedvectors.KeyedVectors, unique_words):
     """
         Given the embedding model and the unique words in the dataframe, determines the out-of-vocabulary words 
     """
     oov_words = []
-    idx_oov_words = []
 
     if embedding_model is None:
         print('WARNING: empty embeddings model')

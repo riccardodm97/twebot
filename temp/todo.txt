@@ -14,6 +14,7 @@ PREPROCESSING TODO :
   - separare parole con apostrofi o trattini 
   - rimuovere frasi troppo corte 
 - eliminare righe con troppi OOV o con troppe poche parole 
+- mantenere la % di oov simile tra i vari split altrimenti le metriche sono falsate 
 
 
 
