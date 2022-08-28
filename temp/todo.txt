@@ -11,12 +11,14 @@ ACTIVE TODO :
   - stampare le oov e modificare il possibile 
   - rimuovere tutte le frasi non in inglese
   - rimuovere unicode 
-  - separare parole con apostrofi o trattini 
+  - separare parole con apostrofi
   - rimuovere frasi troppo corte 
-  - eliminare righe con troppi OOV o con troppe poche parole 
+  - eliminare righe con troppi OOV 
   - mantenere la % di oov simile tra i vari split altrimenti le metriche sono falsate 
 - loggare risultati su wandb 
 - class imbalance -> inizializzare bias ultimo layer / weight nella loss 
+- trainare la baseline 
+- quali metadati usare e come passarli al modello 
 
 
 
