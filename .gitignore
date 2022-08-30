@@ -1,3 +1,5 @@
 .vscode
 /data/*
 !/data/.gitkeep
+/models/*
+!/models/.gitkeep
