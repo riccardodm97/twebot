@@ -172,5 +172,8 @@ def process_dataset_v2(dataframe : pd.DataFrame, save_path) :
 
         df[column_names] = df[column_names].apply(zscore)
 
+        print('saving processed dataset to file')
+        df.to_pickle(save_path)   #save to file
+
         return df 
 

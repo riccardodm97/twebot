@@ -12,41 +12,12 @@ import src.globals as glob
 
 Vocab = namedtuple('Vocabulary',['word2int','int2word','unique_words'])
 
-class SingleTweetDataset(Dataset):
-
-    def __init__(self, dataframe: pd.DataFrame):
-        self.tweet = dataframe['processed_tweet']
-        self.label = dataframe['label']
-
-    def __len__(self):
-        return len(self.label)
-
-    def __getitem__(self, idx):
-        return {
-            'tweet': self.tweet[idx],
-            'label': self.label[idx],
-            }
-
-class SingleTweetAndMetadata(Dataset):
-
-    def __init__(self, dataframe: pd.DataFrame):
-        return NotImplementedError()
-
-    def __len__(self):
-        return NotImplementedError()
-
-    def __getitem__(self, idx):
-        return NotImplementedError()
-
-
-
-
 class BaseDataManager():
 
     def __init__(self, dataframe : pd.DataFrame, device):
 
         self.device = device 
-        self.dataset = dataframe.copy(deep=True)
+        self.dataset_df = dataframe.copy(deep=True)
     
     def custom_collate(self, batch):
         return NotImplementedError()
@@ -97,7 +68,20 @@ class BaseDataManager():
         dataset = getattr(self,split+'_ds') 
         return DataLoader(dataset,batch_size,shuffle=shuffle,collate_fn=self.custom_collate)
 
+class SingleTweetDataset(Dataset):
 
+    def __init__(self, dataframe: pd.DataFrame):
+        self.tweet = dataframe['processed_tweet']
+        self.label = dataframe['label']
+
+    def __len__(self):
+        return len(self.label)
+
+    def __getitem__(self, idx):
+        return {
+            'tweet': self.tweet[idx],
+            'label': self.label[idx],
+            }
 
 class SingleTweetDataManager(BaseDataManager):
 
@@ -105,9 +89,9 @@ class SingleTweetDataManager(BaseDataManager):
 
         super().__init__(dataframe, device)
 
-        self.train_ds = SingleTweetDataset(self.dataset[self.dataset['split'] == 'train'].reset_index(drop=True))
-        self.val_ds = SingleTweetDataset(self.dataset[self.dataset['split'] == 'val'].reset_index(drop=True))
-        self.test_ds = SingleTweetDataset(self.dataset[self.dataset['split'] == 'test'].reset_index(drop=True))
+        self.train_ds = SingleTweetDataset(self.dataset_df[self.dataset_df['split'] == 'train'].reset_index(drop=True))
+        self.val_ds = SingleTweetDataset(self.dataset_df[self.dataset_df['split'] == 'val'].reset_index(drop=True))
+        self.test_ds = SingleTweetDataset(self.dataset_df[self.dataset_df['split'] == 'test'].reset_index(drop=True))
 
     def custom_collate(self, batch):
         
@@ -123,11 +107,56 @@ class SingleTweetDataManager(BaseDataManager):
             'labels': labels,
             'lengths': tweet_lengths
         }
-    
 
-class SingleTweetAndMetadataDataMenager(BaseDataManager):  
-    def __init__(self):
-        return NotImplementedError()
+class SingleTweetAndMetadata(Dataset):
+
+    def __init__(self, dataframe: pd.DataFrame):
+        self.tweet = dataframe['processed_tweet']
+        self.label = dataframe['label']
+        self.features = dataframe['features']
+
+    def __len__(self):
+        return len(self.label)
+
+    def __getitem__(self, idx):
+        return {
+            'tweet': self.tweet[idx],
+            'label': self.label[idx],
+            'features': self.features[idx]
+            }
+
+class SingleTweetAndMetadataDataManager(BaseDataManager):  
+
+    feature_columns = ['is_rt','url_c','tag_c','hashtag_c','cashtag_c','money_c','email_c','number_c','emoji_c','emoticon_c','len_tweet','stopwords_c','punct_c']
+
+    def __init__(self, dataframe : pd.DataFrame, device):
+        super().__init__(dataframe, device)
+
+        self.dataset_df['features'] = self.dataset_df[self.feature_columns].values.tolist()
+        self.metadata_features_dim = len(self.feature_columns)
+
+        self.train_ds = SingleTweetAndMetadata(self.dataset_df[self.dataset_df['split'] == 'train'].reset_index(drop=True))
+        self.val_ds = SingleTweetAndMetadata(self.dataset_df[self.dataset_df['split'] == 'val'].reset_index(drop=True))
+        self.test_ds = SingleTweetAndMetadata(self.dataset_df[self.dataset_df['split'] == 'test'].reset_index(drop=True))
+    
+    def custom_collate(self, batch):
+        
+        tweet_lengths = torch.tensor([len(example['tweet']) for example in batch]) #, device=self.device -> for pack_padded should be on cpu so if only used by that don't put it on gpu
+
+        features = torch.tensor([example['features'] for example in batch], device=self.device) 
+
+        numerized_tweets = [self.numericalize(example['tweet']) for example in batch]
+        padded_tweets = rnn.pad_sequence(numerized_tweets, batch_first = True, padding_value = self.vocab.word2int['<pad>']).to(self.device)
+
+        labels = torch.tensor([example['label'] for example in batch],device=self.device) #(5)
+
+        return {
+            'tweets': padded_tweets,
+            'features' : features,
+            'labels': labels,
+            'lengths': tweet_lengths
+        }
+
 
 
 def loadData():
