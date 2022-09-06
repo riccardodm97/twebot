@@ -4,3 +4,4 @@
 /models/*
 !/models/.gitkeep
 /wandb
+__pycache__/

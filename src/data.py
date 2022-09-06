@@ -30,7 +30,7 @@ class BaseDataManager():
     def build_vocab(self): 
         print('Building vocab...')
 
-        unique_words : list = self.dataset['processed_tweet'].explode().unique().tolist()
+        unique_words : list = self.dataset_df['processed_tweet'].explode().unique().tolist()
         unique_words.insert(0,'<pad>')
 
         word2int = OrderedDict()

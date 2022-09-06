@@ -7,6 +7,7 @@ from ttp import ttp
 from emot.core import emot 
 import pandas as pd 
 from string import punctuation
+import nltk 
 from nltk.corpus import stopwords
 from scipy.stats import zscore 
 
@@ -94,6 +95,7 @@ def process_dataset_v1(dataframe : pd.DataFrame , save_path ) :
 
 def process_dataset_v2(dataframe : pd.DataFrame, save_path) :
 
+        nltk.download('stopwords')
     
         sw = stopwords.words('english')
 

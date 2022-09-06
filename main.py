@@ -94,7 +94,7 @@ def main(task : str, debug : bool) :
         LSTM_NUM_LAYERS = 1                # num of recurrent layers of lstm network 
         FREEZE = False                     # wheter to make the embedding layer trainable or not              
         DROPOUT = True                     # wheter to use dropout layer or not  
-        DROPOUT_P = 0.3                    # dropout probability
+        DROPOUT_P = 0.5                    # dropout probability
         EMBEDDING_MODEL_NAME = 'fastText'  # which embedding model to use 
 
         config = {
@@ -118,7 +118,7 @@ def main(task : str, debug : bool) :
 
             if not os.path.exists(dataset_path_v1) or glob.force_processing:
                 tweets_df, account_df = loadData()
-                dataset_df = process_dataset_v1(tweets_df,dataset_path)
+                dataset_df = process_dataset_v1(tweets_df,dataset_path_v1)
             else : 
                 dataset_df = pd.read_pickle(dataset_path_v1)
             
