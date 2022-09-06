@@ -89,7 +89,7 @@ class SingleTweetAndMetadata_model(nn.Module):
         self.classifier = nn.Linear(cfg['metadata_features_dim'] + cfg['hidden_dim'],1)   
     
     def name(self):
-        return 'SingleTweet_model'
+        return 'SingleTweetAndMetadata_model'
 
     def build_emb_layer(self, weights_matrix: np.ndarray, pad_idx : int, freeze : bool):
     

@@ -14,7 +14,9 @@ import src.globals as glob
 #TODO CHECK FUNCTION WITH BOHT MODELS 
 def load_emb_model(name : str, force_download : bool = False) :
 
-    emb_model_cached_path = "twitter-multilingual-300d.new.bin"  if name == 'fastText' else 'glove-twitter-200.bin'   #TODO add to path somthing (.gz ???) check where gloader puts the file
+    assert name == 'fastText' or name == 'glove', 'the two embedding models available are glove and fasttext'
+
+    emb_model_cached_path = "twitter-multilingual-300d.new.bin" if name == 'fastText' else 'glove-twitter-200.bin'   #TODO add to path somthing (.gz ???) check where gloader puts the file
     emb_model_cached_path = glob.DATA_FOLDER / emb_model_cached_path
 
     if not os.path.exists(emb_model_cached_path) or force_download: 
