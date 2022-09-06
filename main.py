@@ -89,13 +89,13 @@ def main(task : str, debug : bool) :
         BATCH_SIZE = 512                   # number of sentences in each mini-batch
         LR = 1e-3                          # learning rate 
         NUM_EPOCHS = 5                     # number of epochs
-        WEIGHT_DECAY = 1e-3                # regularization
+        WEIGHT_DECAY = 1e-5                # regularization
         LSTM_HIDDEN_DIM = 300              # hidden dimension of lstm network 
         LSTM_NUM_LAYERS = 1                # num of recurrent layers of lstm network 
         FREEZE = False                     # wheter to make the embedding layer trainable or not              
         DROPOUT = True                     # wheter to use dropout layer or not  
         DROPOUT_P = 0.5                    # dropout probability
-        EMBEDDING_MODEL_NAME = 'glove'  # which embedding model to use 
+        EMBEDDING_MODEL_NAME = 'fastText'  # which embedding model to use 
 
         config = {
             'batch_size' : BATCH_SIZE,
