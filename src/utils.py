@@ -54,8 +54,8 @@ def check_OOV_terms(embedding_model: gensim.models.keyedvectors.KeyedVectors, un
             except:
                 oov_words.append(word) 
         
-        print("Total number of unique words in dataset:",len(unique_words))
-        print("Total OOV terms: {0} which is ({1:.2f}%)".format(len(oov_words), (float(len(oov_words)) / len(unique_words))*100))
+        print("Number of unique words in dataset:",len(unique_words))
+        print(f"Total OOV terms: {len(oov_words)} which is ({(float(len(oov_words)) / len(unique_words))*100:.2f}%)")
         print("Some OOV terms:",random.sample(oov_words,10))
     
     return oov_words

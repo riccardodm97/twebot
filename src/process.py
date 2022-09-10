@@ -20,21 +20,23 @@ def process_dataset_v1(dataframe : pd.DataFrame , save_path ) :
     emot_obj = emot()
     tk = TweetTokenizer(reduce_len=True,preserve_case=False)
 
-    CASHTAG = "(?<!\S)\$[A-Z]+(?:\.[A-Z]+)?(?!\S)"   # to check  (?:\.[A-Z]+)?
+    RETWEET = r"^RT (?:@[\w_]+):"
+    NEWLINE = r"\n"
+    CASHTAG = r"(?<!\S)\$[A-Z]+(?:\.[A-Z]+)?(?!\S)"
     EMAIL = r"""[\w.+-]+@[\w-]+\.(?:[\w-]\.?)+[\w-]"""
-    MONEY = "[$£][0-9]+(?:[.,]\d+)?[k+B]?|[0-9]+(?:[.,]\d+)?[k+B]?[$£]"  
-    NUMBERS = r"""(?<!\S)(?:[+\-]?\d+(?:%|(?:[,/.:-]\d+[+\-]?)?))"""   # r"""(?:[+\-]?\d+[,/.:-]\d+[+\-]?)"""   
+    MONEY = r"[$£][0-9]+(?:[.,]\d+)?[Kk+BM]?|[0-9]+(?:[.,]\d+)?[Kk+BM]?[$£]"
+    NUMBER = r"""(?<!\S)(?:[+\-]?\d+(?:%|(?:[,/.:-]\d+[+\-]?)?))"""
     HASHTAG = r"""(?:\#+[\w_]+[\w\'_\-]*[\w_]+)"""
-    HANDLES = r"""(?:@[\w_]+)""" 
+    HANDLE = r"""(?:@[\w_]+)"""
 
-    TO_REPLACE = [CASHTAG, EMAIL, MONEY, NUMBERS, HASHTAG, HANDLES]
-    REPLACE_WITH = [' stock ',' email ',' money ',' number ',' hashtag ',' username ']
+    TO_REPLACE = [RETWEET, NEWLINE, CASHTAG, EMAIL, MONEY, NUMBER, HASHTAG, HANDLE]
+    REPLACE_WITH = [' retweet ',' ',' stock ',' email ',' money ',' number ',' hashtag ',' username ']
 
 
     def replace(word : str):
-        if not word.isascii():
-            return ['']
-        elif bool(re.search(r'http[s]?|.com',word)):
+        # if not word.isascii():
+        #     return ['']
+        if bool(re.search(r'http[s]?|.com',word)):
             return ['url']
         elif bool(re.search(r'\d',word)):
             return ['number']
