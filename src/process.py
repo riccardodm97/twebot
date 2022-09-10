@@ -104,7 +104,7 @@ def process_dataset_v2(dataframe : pd.DataFrame, save_path) :
         df = dataframe.copy(deep=True)  
 
         def is_retweet(sentence_list : list):
-            return float(sentence_list[0] == 'rt')
+            return float(sentence_list[0] == 'retweet')
 
         def url_count(sentence_list : list):
             c = sentence_list.count('url')
