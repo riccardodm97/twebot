@@ -84,6 +84,7 @@ def get_weight_pos_class(dataframe : pd.DataFrame, device) :
     weight_positive_class = torch.tensor([human/bot], device = device)  #weight to give to positive class 
 
     return weight_positive_class
+    
 
 def check_correlation(dataframe : pd.DataFrame, column_names : list[str], target_column : str):
 

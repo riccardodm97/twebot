@@ -150,7 +150,7 @@ def main(task : str, debug : bool) :
     
     weight_positive_class = utils.get_weight_pos_class(dataset_df, DEVICE)
     criterion = nn.BCEWithLogitsLoss(pos_weight=weight_positive_class)    #Binary CrossEntropy Loss that accept raw input and apply internally the sigmoid 
-    optimizer = optim.Adam(model.parameters(), lr=LR , weight_decay=WEIGHT_DECAY)   #L2 regularization 
+    optimizer = optim.Adam(model.parameters(), lr=LR , weight_decay=WEIGHT_DECAY)   #L2 regularization #TODO AdamW
 
     train_loader = data_manager.getDataloader('train', BATCH_SIZE, True)
     val_loader = data_manager.getDataloader('val', BATCH_SIZE, True)
