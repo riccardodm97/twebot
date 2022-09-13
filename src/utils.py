@@ -11,12 +11,12 @@ import torch
 
 import src.globals as glob 
 
-#TODO CHECK FUNCTION WITH BOHT MODELS 
+
 def load_emb_model(name : str, force_download : bool = False) :
 
     assert name == 'fastText' or name == 'glove', 'the two embedding models available are glove and fasttext'
 
-    emb_model_cached_path = "twitter-multilingual-300d.new.bin" if name == 'fastText' else 'glove-twitter-200.bin'   #TODO add to path somthing (.gz ???) check where gloader puts the file
+    emb_model_cached_path = "twitter-multilingual-300d.new.bin" if name == 'fastText' else 'glove-twitter-200.bin'   
     emb_model_cached_path = glob.DATA_FOLDER / emb_model_cached_path
 
     if not os.path.exists(emb_model_cached_path) or force_download: 
@@ -88,7 +88,7 @@ def get_weight_pos_class(dataframe : pd.DataFrame, device) :
 
 def check_correlation(dataframe : pd.DataFrame, column_names : list[str], target_column : str):
 
-    print(dataframe[column_names].corrwith(dataframe['label']))
+    print(dataframe[column_names].corrwith(dataframe[target_column]))
 
 
 

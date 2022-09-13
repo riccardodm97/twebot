@@ -5,4 +5,4 @@ BASE_PATH = Path().absolute()              #Path(*Path().absolute().parts[:-1]) 
 DATA_FOLDER = BASE_PATH / 'data' # directory containing the notebook
 
 
-force_processing = False 
+force_processing = True  
