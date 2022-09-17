@@ -54,30 +54,30 @@ def process_dataset_v1(dataframe : pd.DataFrame , save_path ) :
 
     def further_process(sentence: str):
 
-            #replace urls 
-            result = parser.parse(sentence, html=False)
-            urls = dict(result.urls).keys()
-            for url in urls:
-                    sentence = sentence.replace(url,' url ')
-            
-            #replace emoticons 
-            emoticons = emot_obj.emoticons(sentence)
-            for emoticon in emoticons['value']:
-                    sentence = sentence.replace(emoticon,' emoticon ')
-            
-            #replace emoji
-            sentence = emoji.replace_emoji(sentence,' emoji ')
+        #replace urls 
+        result = parser.parse(sentence, html=False)
+        urls = dict(result.urls).keys()
+        for url in urls:
+            sentence = sentence.replace(url,' url ')
+        
+        #replace emoticons 
+        emoticons = emot_obj.emoticons(sentence)
+        for emoticon in emoticons['value']:
+            sentence = sentence.replace(emoticon,' emoticon ')
+        
+        #replace emoji
+        sentence = emoji.replace_emoji(sentence,' emoji ')
 
-            #tokenize
-            sentence = tk.tokenize(sentence)
+        #tokenize
+        sentence = tk.tokenize(sentence)
 
-            #replace residual wrong words 
-            sentence = [w for word in sentence for w in replace(word)]
-            
-            #remove empty strings 
-            sentence = [word for word in sentence if word != '']
-                    
-            return sentence
+        #replace residual wrong words 
+        sentence = [w for word in sentence for w in replace(word)]
+        
+        #remove empty strings 
+        sentence = [word for word in sentence if word != '']
+                
+        return sentence
 
     print('starting data processing')
 
@@ -97,87 +97,87 @@ def process_dataset_v1(dataframe : pd.DataFrame , save_path ) :
 
 def process_dataset_v2(dataframe : pd.DataFrame, save_path) :
 
-        nltk.download('stopwords')
-    
-        sw = stopwords.words('english')
+    nltk.download('stopwords')
 
-        df = dataframe.copy(deep=True)  
+    sw = stopwords.words('english')
 
-        def is_retweet(sentence_list : list):
-            return float(sentence_list[0] == 'retweet')
+    df = dataframe.copy(deep=True)  
 
-        def url_count(sentence_list : list):
-            c = sentence_list.count('url')
-            return c
+    def is_retweet(sentence_list : list):
+        return float(sentence_list[0] == 'retweet')
+
+    def url_count(sentence_list : list):
+        c = sentence_list.count('url')
+        return c
+        
+    def tag_count(sentence_list : list):
+        c = sentence_list.count('username')
+        return c
+
+    def hashtag_count(sentence_list : list):
+        c = sentence_list.count('hashtag')
+        return c
+
+    def cashtag_count(sentence_list : list):
+        c = sentence_list.count('stock')
+        return c
+
+    def money_count(sentence_list : list):
+        c = sentence_list.count('money')
+        return c
+
+    def email_count(sentence_list : list):
+        c = sentence_list.count('email')
+        return c
+        
+    def number_count(sentence_list : list):
+        c = sentence_list.count('number')
+        return c
+
+    def emoticon_count(sentence_list : list):
+        c = sentence_list.count('emoticon')
+        return c
+
+    def emoji_count(sentence_list : list):
+        c = sentence_list.count('emoji')
+        return c
+
+    def stopwords_count(sentence_list : list):
+        c = 0
+        for word in sentence_list : 
+            if word in sw:
+                c+=1
             
-        def tag_count(sentence_list : list):
-            c = sentence_list.count('username')
-            return c
+        return c 
 
-        def hashtag_count(sentence_list : list):
-            c = sentence_list.count('hashtag')
-            return c
-
-        def cashtag_count(sentence_list : list):
-            c = sentence_list.count('stock')
-            return c
-
-        def money_count(sentence_list : list):
-            c = sentence_list.count('money')
-            return c
-
-        def email_count(sentence_list : list):
-            c = sentence_list.count('email')
-            return c
+    def punct_count(sentence_list : list):
+        c = 0
+        for word in sentence_list : 
+            if word in punctuation:
+                c+=1
             
-        def number_count(sentence_list : list):
-            c = sentence_list.count('number')
-            return c
+        return c 
 
-        def emoticon_count(sentence_list : list):
-            c = sentence_list.count('emoticon')
-            return c
+    df['is_rt'] = df['processed_tweet'].apply(is_retweet)
+    df['url_c'] = df['processed_tweet'].apply(url_count)
+    df['tag_c'] = df['processed_tweet'].apply(tag_count)
+    df['hashtag_c'] = df['processed_tweet'].apply(hashtag_count)
+    df['cashtag_c'] = df['processed_tweet'].apply(cashtag_count)
+    df['money_c'] = df['processed_tweet'].apply(money_count)
+    df['email_c'] = df['processed_tweet'].apply(email_count)
+    df['number_c'] = df['processed_tweet'].apply(number_count)
+    df['emoji_c'] = df['processed_tweet'].apply(emoji_count)
+    df['emoticon_c'] = df['processed_tweet'].apply(emoticon_count)
+    df['len_tweet'] = df['processed_tweet'].apply(len)
+    df['stopwords_c'] = df['processed_tweet'].apply(stopwords_count)
+    df['punct_c'] = df['processed_tweet'].apply(punct_count)
 
-        def emoji_count(sentence_list : list):
-            c = sentence_list.count('emoji')
-            return c
+    column_names = ['url_c','tag_c','hashtag_c','cashtag_c','money_c','email_c','number_c','emoji_c','emoticon_c','len_tweet','stopwords_c','punct_c']
 
-        def stopwords_count(sentence_list : list):
-            c = 0
-            for word in sentence_list : 
-                if word in sw:
-                    c+=1
-                
-            return c 
+    df[column_names] = df[column_names].apply(zscore)
 
-        def punct_count(sentence_list : list):
-            c = 0
-            for word in sentence_list : 
-                if word in punctuation:
-                    c+=1
-                
-            return c 
+    print('saving processed dataset to file')
+    df.to_pickle(save_path)   #save to file
 
-        df['is_rt'] = df['processed_tweet'].apply(is_retweet)
-        df['url_c'] = df['processed_tweet'].apply(url_count)
-        df['tag_c'] = df['processed_tweet'].apply(tag_count)
-        df['hashtag_c'] = df['processed_tweet'].apply(hashtag_count)
-        df['cashtag_c'] = df['processed_tweet'].apply(cashtag_count)
-        df['money_c'] = df['processed_tweet'].apply(money_count)
-        df['email_c'] = df['processed_tweet'].apply(email_count)
-        df['number_c'] = df['processed_tweet'].apply(number_count)
-        df['emoji_c'] = df['processed_tweet'].apply(emoji_count)
-        df['emoticon_c'] = df['processed_tweet'].apply(emoticon_count)
-        df['len_tweet'] = df['processed_tweet'].apply(len)
-        df['stopwords_c'] = df['processed_tweet'].apply(stopwords_count)
-        df['punct_c'] = df['processed_tweet'].apply(punct_count)
-
-        column_names = ['url_c','tag_c','hashtag_c','cashtag_c','money_c','email_c','number_c','emoji_c','emoticon_c','len_tweet','stopwords_c','punct_c']
-
-        df[column_names] = df[column_names].apply(zscore)
-
-        print('saving processed dataset to file')
-        df.to_pickle(save_path)   #save to file
-
-        return df 
+    return df 
 
