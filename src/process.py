@@ -84,7 +84,7 @@ def process_dataset_v1(dataframe : pd.DataFrame , save_path ) :
     dataframe['processed_tweet'] = dataframe['tweet'].replace(TO_REPLACE,REPLACE_WITH,regex=True,inplace=False)
     dataframe['processed_tweet'] = dataframe['processed_tweet'].apply(further_process)
 
-    dataframe = dataframe[dataframe['processed_tweet'].map(lambda x: len(x)) > 2].reset_index(drop=True)   
+    # dataframe = dataframe[dataframe['processed_tweet'].map(lambda x: len(x)) > 2].reset_index(drop=True)     #TODO leave it or not ?? 
 
     dataframe['label'] = dataframe['label'].astype(float)  
 
