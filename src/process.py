@@ -1,17 +1,22 @@
 
 import re
+from string import punctuation
+from statistics import mean
 
 import emoji
-from nltk.tokenize import TweetTokenizer
 from ttp import ttp 
 from emot.core import emot 
 import pandas as pd 
-from string import punctuation
+from pandas.core.common import flatten
 import nltk 
+from nltk.tokenize import TweetTokenizer
+from nltk.corpus import stopwords
 from nltk.corpus import stopwords
 from scipy.stats import zscore 
 
 import src.globals as glob 
+
+nltk.download('stopwords',glob.DATA_FOLDER)
 
 
 def process_dataset_v1(dataframe : pd.DataFrame , save_path ) :
@@ -97,8 +102,6 @@ def process_dataset_v1(dataframe : pd.DataFrame , save_path ) :
 
 def process_dataset_v2(dataframe : pd.DataFrame, save_path) :
 
-    nltk.download('stopwords')
-
     sw = stopwords.words('english')
 
     df = dataframe.copy(deep=True)  
@@ -180,4 +183,174 @@ def process_dataset_v2(dataframe : pd.DataFrame, save_path) :
     df.to_pickle(save_path)   #save to file
 
     return df 
+
+
+def process_dataset_v3(dataframe : pd.DataFrame, tw_for_features : int, tw_for_txt : int, save_path) :
+
+    sw = stopwords.words('english')
+    df = dataframe.copy(deep=True)
+     
+    
+    def clean_tweet(tweet: list ):
+        to_remove = ['retweet','username','hashtag','url','emoticon','emoji','number','stock','money','email']
+        return [x for x in tweet if x not in to_remove and x not in punctuation and x not in sw]
+
+
+    #BEFORE COLLAPSING ALL TWEET IN ONE
+
+    def avg_tweet_length(sentence_list : list[list]):
+        return mean([len(sentence) for sentence in sentence_list])
+
+    def avg_cleaned_tweet_length(sentence_list : list[list]) :
+        return mean([len(clean_tweet(sentence)) for sentence in sentence_list])
+
+    def tweet_with_atleast_one_mention(sentence_list : list[list]):
+        n = 0
+        for sentence in sentence_list:
+            if 'username' in sentence:
+                n+=1
+        
+        return n
+
+    def tweet_with_atleast_one_emot(sentence_list : list[list]):
+        n = 0
+        for sentence in sentence_list:
+            if 'emoji' in sentence or 'emoticon' in sentence:
+                n+=1
+        
+        return n
+
+    def tweet_with_atleast_one_url(sentence_list : list[list]):
+        n = 0
+        for sentence in sentence_list:
+            if 'url' in sentence:
+                n+=1
+        
+        return n
+
+    def max_hashtags_single_tweet(sentence_list : list[list]):
+        return max([sentence.count('hashtag') for sentence in sentence_list])
+
+    def max_mentions_single_tweet(sentence_list : list[list]):
+        return max([sentence.count('username') for sentence in sentence_list])
+
+    def unique_words_ratio(sentence_list : list[list]):
+        s = []
+        for sentence in sentence_list:
+            if sentence[0] != 'retweet':
+                s.extend(clean_tweet(sentence))
+        
+        if s : return len(set(s)) / len(s)
+        else : return 1.0
+
+
+    #AFTER COLLAPSING ALL TWEET IN ONE
+
+    def URLs_count(proc_sentence : list):
+        return proc_sentence.count('url')
+
+    def hashtag_count(proc_sentence : list):
+        return proc_sentence.count('hashtag')
+
+    def unique_hashtag_ratio(sentence : str):
+
+        tags = re.findall(r"""(?:\#+[\w_]+[\w\'_\-]*[\w_]+)""",sentence)
+        if tags :
+            return len(set(tags)) / len(tags) 
+        else : return 1.0 
+        
+    def mention_count(proc_sentence : list):
+        return proc_sentence.count('username')
+
+    def unique_mention_ratio(sentence : str):
+
+        mentions = re.findall(r"""(?<!RT )(?:@[\w_]+)""",sentence)
+        if mentions :
+            return len(set(mentions)) / len(mentions) 
+        else : return 1.0 
+
+    def emoticon_emoji_count(proc_sentence : list):
+        return proc_sentence.count('emoticon') + proc_sentence.count("emoji")
+
+    def punctuation_count(proc_sentence : list):
+        c = 0
+        for word in proc_sentence : 
+            if word in punctuation:
+                c+=1
+            
+        return c 
+
+    def question_and_exclamation_mark_count(proc_sentence : list):
+        return proc_sentence.count('?') + proc_sentence.count("!")
+
+    def uppercased_word_count(proc_sentence : list):
+        return sum([str.isupper(word) for word in proc_sentence])
+
+    def cashtag_money_count(proc_sentence : list):
+        return proc_sentence.count('stock') + proc_sentence.count("money")   #TODO cosi si confondon anche con le parole stock e money originali 
+
+    def retweet_count(proc_sentence : list):
+        return proc_sentence.count('retweet')
+
+    def unique_retweet_ratio(sentence : str):
+
+        rt = re.findall(r"RT (?:@[\w_]+):",sentence)
+        if rt :
+            return len(set(rt)) / len(rt) 
+        else : return 1.0 
+
+    # AGGREGATE TWEET FROM SAME ACCOUNT 
+    
+    aggregation_functions = {'account_id': 'first', 'tweet': lambda x : x.tolist(), 'label': 'first', 'split': 'first','processed_tweet': lambda x : x.tolist()}
+    df = df.groupby(df['account_id'],as_index=False,sort=False).agg(aggregation_functions) 
+    df = df [df['tweet'].map(lambda x: len(x)) >= tw_for_features].reset_index(drop=True) 
+    df['n_tweet'] = df['tweet'].map(lambda x: x[:tw_for_features])
+    df['n_processed_tweet'] = df['processed_tweet'].map(lambda x: x[:tw_for_features])
+
+
+    df['avg_length'] = df['n_processed_tweet'].apply(avg_tweet_length)
+    df['avg_cleaned_length'] = df['n_processed_tweet'].apply(avg_cleaned_tweet_length)
+    df['1+_mention'] = df['n_processed_tweet'].apply(tweet_with_atleast_one_mention)
+    df['1+_emot'] = df['n_processed_tweet'].apply(tweet_with_atleast_one_emot)
+    df['1+_url'] = df['n_processed_tweet'].apply(tweet_with_atleast_one_url)
+    df['max_hashtag'] = df['n_processed_tweet'].apply(max_hashtags_single_tweet)
+    df['max_mentions'] = df['n_processed_tweet'].apply(max_mentions_single_tweet)
+    df['unique_words_ratio'] = df['n_processed_tweet'].apply(unique_words_ratio)
+
+    # COLLAPSE MULTIPLE TWEET IN ONE 
+
+    df['n_tweet'] = df['n_tweet'].apply(' '.join)
+    df['n_processed_tweet'] = df['n_processed_tweet'].apply(lambda x : list(flatten(x)))
+
+    df['url_count'] = df['n_processed_tweet'].apply(URLs_count)
+    df['hashtag_count'] = df['n_processed_tweet'].apply(hashtag_count)
+    df['unique_hashtag_ratio'] = df['n_tweet'].apply(unique_hashtag_ratio)
+    df['mention_count'] = df['n_processed_tweet'].apply(mention_count)
+    df['unique_mention_ratio'] = df['n_tweet'].apply(unique_mention_ratio)
+    df['emot_count'] = df['n_processed_tweet'].apply(emoticon_emoji_count)
+    df['punct_count'] = df['n_processed_tweet'].apply(punctuation_count)
+    df['?!_count'] = df['n_processed_tweet'].apply(question_and_exclamation_mark_count)
+    df['uppercased_count'] = df['n_processed_tweet'].apply(uppercased_word_count)
+    df['cash_money_count'] = df['n_processed_tweet'].apply(cashtag_money_count)
+    df['rt_count'] = df['n_processed_tweet'].apply(retweet_count)
+    df['unique_rt_ratio'] = df['n_tweet'].apply(unique_retweet_ratio)
+
+    
+    # REPEAT THE PROCESS OF SELECTION AND COLLAPSING IN CASE WE WANT A DIFFERENT NUMBER OF TWEETS FOR TEXT THAN FOR FEATURES  
+    df['tweet'] = df['tweet'].map(lambda x: x[:tw_for_txt])
+    df['processed_tweet'] = df['processed_tweet'].map(lambda x: x[:tw_for_txt])
+    df['tweet'] = df['tweet'].apply(' '.join)
+    df['processed_tweet'] = df['processed_tweet'].apply(lambda x : list(flatten(x)))
+
+    # APPLY NORMALIZATION 
+
+    column_names = ['avg_length','avg_cleaned_length','1+_mention','1+_emot','1+_url','max_hashtag','max_mentions','url_count','hashtag_count','mention_count','emot_count','punct_count','?!_count','uppercased_count','cash_money_count','rt_count']
+    #column_names.extend(['unique_hashtag_ratio','unique_mention_ratio','unique_rt_ratio','unique_words_ratio'])  #TODO ??
+    df[column_names] = df[column_names].apply(zscore)
+
+    print('saving processed dataset to file')
+    df.to_pickle(save_path)   #save to file
+
+    return df 
+
 

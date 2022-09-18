@@ -6,6 +6,9 @@ TODO RNN:
     - Controllare che i dati passati al modello e l'elaborazione siano corrette
 
 
+
+GUARDARE IL SIGNIFICATO DELKA WEIGHTED LOSS PERCHè MAGARI LA CHIEDE 
+
 ACTIVE TODO :
 - migliorare il preprocessing : 
   - stampare le oov e modificare il possibile 
