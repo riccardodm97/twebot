@@ -68,7 +68,7 @@ class BaseDataManager():
         dataset = getattr(self,split+'_ds') 
         return DataLoader(dataset,batch_size,shuffle=shuffle,collate_fn=self.custom_collate)
 
-class SingleTweetDataset(Dataset):
+class TweetDataset(Dataset):
 
     def __init__(self, dataframe: pd.DataFrame):
         self.tweet = dataframe['processed_tweet']
@@ -89,9 +89,9 @@ class SingleTweetDataManager(BaseDataManager):
 
         super().__init__(dataframe, device)
 
-        self.train_ds = SingleTweetDataset(self.dataset_df[self.dataset_df['split'] == 'train'].reset_index(drop=True))
-        self.val_ds = SingleTweetDataset(self.dataset_df[self.dataset_df['split'] == 'val'].reset_index(drop=True))
-        self.test_ds = SingleTweetDataset(self.dataset_df[self.dataset_df['split'] == 'test'].reset_index(drop=True))
+        self.train_ds = TweetDataset(self.dataset_df[self.dataset_df['split'] == 'train'].reset_index(drop=True))
+        self.val_ds = TweetDataset(self.dataset_df[self.dataset_df['split'] == 'val'].reset_index(drop=True))
+        self.test_ds = TweetDataset(self.dataset_df[self.dataset_df['split'] == 'test'].reset_index(drop=True))
 
     def custom_collate(self, batch):
         
@@ -108,7 +108,7 @@ class SingleTweetDataManager(BaseDataManager):
             'lengths': tweet_lengths
         }
 
-class SingleTweetAndMetadata(Dataset):
+class TweetAndMetadataDataset(Dataset):
 
     def __init__(self, dataframe: pd.DataFrame):
         self.tweet = dataframe['processed_tweet']
@@ -135,9 +135,9 @@ class SingleTweetAndMetadataDataManager(BaseDataManager):
         self.dataset_df['features'] = self.dataset_df[self.feature_columns].values.tolist()
         self.metadata_features_dim = len(self.feature_columns)
 
-        self.train_ds = SingleTweetAndMetadata(self.dataset_df[self.dataset_df['split'] == 'train'].reset_index(drop=True))
-        self.val_ds = SingleTweetAndMetadata(self.dataset_df[self.dataset_df['split'] == 'val'].reset_index(drop=True))
-        self.test_ds = SingleTweetAndMetadata(self.dataset_df[self.dataset_df['split'] == 'test'].reset_index(drop=True))
+        self.train_ds = TweetAndMetadataDataset(self.dataset_df[self.dataset_df['split'] == 'train'].reset_index(drop=True))
+        self.val_ds = TweetAndMetadataDataset(self.dataset_df[self.dataset_df['split'] == 'val'].reset_index(drop=True))
+        self.test_ds = TweetAndMetadataDataset(self.dataset_df[self.dataset_df['split'] == 'test'].reset_index(drop=True))
     
     def custom_collate(self, batch):
         
@@ -156,6 +156,13 @@ class SingleTweetAndMetadataDataManager(BaseDataManager):
             'labels': labels,
             'lengths': tweet_lengths
         }
+
+class MultiTweetAndMetadataDataManager(SingleTweetAndMetadataDataManager):
+    feature_columns = ['avg_length','avg_cleaned_length','1+_mention','1+_emot','1+_url','max_hashtag','max_mentions','url_count','hashtag_count','mention_count',
+    'emot_count','punct_count','?!_count','uppercased_count','cash_money_count','rt_count','unique_hashtag_ratio','unique_mention_ratio','unique_rt_ratio','unique_words_ratio']  
+
+    def __init__(self, dataframe: pd.DataFrame, device):
+        super().__init__(dataframe, device)
 
 
 

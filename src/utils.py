@@ -80,7 +80,8 @@ def get_weight_pos_class(dataframe : pd.DataFrame, device) :
 
     #to counteract class imbalance 
     train = dataframe[dataframe['split']=='train']
-    (human, bot) = train['label'].value_counts()
+    counts = train['label'].value_counts().to_dict()
+    (human, bot) = counts[0.0], counts[1.0]
     weight_positive_class = torch.tensor([human/bot], device = device)  #weight to give to positive class 
 
     return weight_positive_class
