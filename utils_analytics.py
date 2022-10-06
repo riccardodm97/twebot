@@ -10,16 +10,13 @@ from collections import OrderedDict, namedtuple
 import wandb 
 from datetime import datetime
 import pytz
+import src.globals as glob
 
-# PATHS 
-BASE_PATH = Path(*Path().absolute().parts[:-1])
-DATA_FOLDER = BASE_PATH / 'data' # directory containing the notebook
+def loadData():
 
-def load_data():
-
-    json_file_path_train = DATA_FOLDER / 'Twibot-20/train.json'
-    json_file_path_val = DATA_FOLDER / 'Twibot-20/dev.json'
-    json_file_path_test = DATA_FOLDER / 'Twibot-20/test.json'
+    json_file_path_train = glob.DATA_FOLDER / 'Twibot-20/train.json'
+    json_file_path_val = glob.DATA_FOLDER / 'Twibot-20/dev.json'
+    json_file_path_test = glob.DATA_FOLDER / 'Twibot-20/test.json'
 
     with open(json_file_path_train, 'r') as tr:
         contents = json.loads(tr.read())
