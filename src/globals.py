@@ -1,7 +1,7 @@
 from pathlib import Path
 
 # PATHS 
-BASE_PATH = Path().absolute()              #Path(*Path().absolute().parts[:-1]) for jupyter 
+BASE_PATH = Path().absolute().parent       #TODO CHANGE       #Path().absolute()
 DATA_FOLDER = BASE_PATH / 'data'           # directory containing all the data 
 
 

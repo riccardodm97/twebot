@@ -25,7 +25,7 @@ def main(task : str, debug : bool) :
     DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(f'running on {DEVICE}')
 
-    if task == 'account' : 
+    if task == 'Account' : 
 
         #hyperparameters
         NUM_ESTIMATORS = 100
@@ -293,7 +293,7 @@ def main(task : str, debug : bool) :
 if __name__ == "__main__":
     parser = ArgumentParser()
 
-    parser.add_argument("-t","--task", dest="task",help="Task to perform", choices=["SingleTweet","SingleTweetAndMetadata","MultiTweetAndMetadata"], required=True)
+    parser.add_argument("-t","--task", dest="task",help="Task to perform", choices=["Account", "SingleTweet","SingleTweetAndMetadata","MultiTweetAndMetadata,TweetAndAccount"], required=True)
     parser.add_argument("--debug",dest="debug",help="wheter to log on wandb or not", action="store_true")   
     args = parser.parse_args()
 
