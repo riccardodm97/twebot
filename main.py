@@ -2,20 +2,20 @@
 from argparse import ArgumentParser
 from datetime import datetime
 import pytz
-import os 
 
 import torch 
 import torch.nn as nn
 import torch.optim as optim
 import wandb 
-import pandas as pd 
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
-from src.data import MultiTweetAndMetadataDataManager, SingleTweetAndMetadataDataManager, SingleTweetDataManager, loadData
-from src.models import MultiTweetAndMetadata_model, SingleTweet_model, SingleTweetAndMetadata_model
+from src.data import MultiTweetAndMetadataDataManager, SingleTweetAndMetadataDataManager, SingleTweetDataManager, TweetAndAccountDataManager, loadData
+from src.models import MultiTweetAndMetadata_model, SingleTweet_model, SingleTweetAndMetadata_model, TweetAndAccount_model
 import src.utils as utils
 from src.trainer import Trainer
 import src.globals as glob
-from src.process import process_dataset_v1, process_dataset_v2, process_dataset_v3
+from src.process import process_dataset
 
 
 def main(task : str, debug : bool) :
@@ -25,213 +25,268 @@ def main(task : str, debug : bool) :
     DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(f'running on {DEVICE}')
 
-
-    if task == 'SingleTweet':
-
-        #hyperparameters
-        BATCH_SIZE = 512                   # number of sentences in each mini-batch
-        LR = 1e-3                          # learning rate 
-        NUM_EPOCHS = 5                     # number of epochs
-        WEIGHT_DECAY = 1e-5                # regularization
-        LSTM_HIDDEN_DIM = 300              # hidden dimension of lstm network 
-        LSTM_NUM_LAYERS = 1                # num of recurrent layers of lstm network 
-        FREEZE = False                     # wheter to make the embedding layer trainable or not              
-        DROPOUT = True                     # wheter to use dropout layer or not  
-        DROPOUT_P = 0.5                    # dropout probability
-        EMBEDDING_MODEL_NAME = 'fastText'  # which embedding model to use 
-
-        config = {
-            'batch_size' : BATCH_SIZE,
-            'lr' : LR,
-            'num_epochs' : NUM_EPOCHS,
-            'weight_decay' : WEIGHT_DECAY,
-            'lstm_hidden_dim' : LSTM_HIDDEN_DIM,
-            'lstm_num_layers': LSTM_NUM_LAYERS,
-            'freeze' : FREEZE,
-            'dropout' : DROPOUT,
-            'dropout_p' : DROPOUT_P,
-            'device' : DEVICE,
-            'emb_model_name': EMBEDDING_MODEL_NAME
-        }
-
-        dataset_path = glob.DATA_FOLDER / 'processed_dataset_v1.pkl'
-
-        if not os.path.exists(dataset_path) or glob.force_processing:
-            tweets_df, account_df = loadData()
-            dataset_df = process_dataset_v1(tweets_df,dataset_path)
-        else : 
-            print('found already processed dataset in data folder, retrieving the file...')
-            dataset_df = pd.read_pickle(dataset_path)
-            print('dataset loaded in Dataframe')
-        
-        emb_model = utils.load_emb_model(EMBEDDING_MODEL_NAME)
-
-        data_manager = SingleTweetDataManager(dataset_df,DEVICE)
-        data_manager.build_vocab()
-        data_manager.build_emb_matrix(emb_model)
-
-        # model config parameters dictionary
-        model_cfg = {
-            'pad_idx' : data_manager.vocab.word2int['<pad>'],
-            'freeze_embedding' : FREEZE,  
-            'dropout' : DROPOUT,
-            'dropout_p' : DROPOUT_P,
-            'hidden_dim' : LSTM_HIDDEN_DIM,
-            'num_layers': LSTM_NUM_LAYERS
-        }
-
-        model = SingleTweet_model(data_manager.emb_matrix,model_cfg,DEVICE)
-
-
-    elif task == 'SingleTweetAndMetadata':
+    if task == 'account' : 
 
         #hyperparameters
-        BATCH_SIZE = 512                   # number of sentences in each mini-batch
-        LR = 1e-3                          # learning rate 
-        NUM_EPOCHS = 5                     # number of epochs
-        WEIGHT_DECAY = 1e-5                # regularization
-        LSTM_HIDDEN_DIM = 300              # hidden dimension of lstm network 
-        LSTM_NUM_LAYERS = 1                # num of recurrent layers of lstm network 
-        FREEZE = False                     # wheter to make the embedding layer trainable or not              
-        DROPOUT = True                     # wheter to use dropout layer or not  
-        DROPOUT_P = 0.5                    # dropout probability
-        EMBEDDING_MODEL_NAME = 'fastText'  # which embedding model to use 
+        NUM_ESTIMATORS = 100
+        CLASS_WEIGHT = 'balanced'
+        RND_STATE = 42
 
-        config = {
-            'batch_size' : BATCH_SIZE,
-            'lr' : LR,
-            'num_epochs' : NUM_EPOCHS,
-            'weight_decay' : WEIGHT_DECAY,
-            'lstm_hidden_dim' : LSTM_HIDDEN_DIM,
-            'lstm_num_layers': LSTM_NUM_LAYERS,
-            'freeze' : FREEZE,
-            'dropout' : DROPOUT,
-            'dropout_p' : DROPOUT_P,
-            'device' : DEVICE,
-            'emb_model_name': EMBEDDING_MODEL_NAME
-        }
+        dataset_df = process_dataset('account')
 
-        dataset_path_v1 = glob.DATA_FOLDER / 'processed_dataset_v1.pkl'
-        dataset_path_v2 = glob.DATA_FOLDER / 'processed_dataset_v2.pkl'
+        train = dataset_df[dataset_df['split'] == 'train'].reset_index(drop=True)
+        val = dataset_df[dataset_df['split'] == 'val'].reset_index(drop=True)
+        test = dataset_df[dataset_df['split'] == 'test'].reset_index(drop=True)
 
-        if not os.path.exists(dataset_path_v2) or glob.force_processing:
+        X_train, y_train = train.drop(columns=["account_id", "label", "split"], axis=1), train["label"]
+        X_val, y_val = val.drop(columns=["account_id", "label", "split"], axis=1), val["label"]
+        X_test, y_test = test.drop(columns=["account_id", "label", "split"], axis=1), test["label"]
 
-            if not os.path.exists(dataset_path_v1) or glob.force_processing:
-                tweets_df, account_df = loadData()
-                dataset_df = process_dataset_v1(tweets_df,dataset_path_v1)
-            else : 
-                dataset_df = pd.read_pickle(dataset_path_v1)
+        rf = RandomForestClassifier(n_estimators=NUM_ESTIMATORS, class_weight=CLASS_WEIGHT, random_state=RND_STATE)
+        rf.fit(X_train, y_train)
+
+        y_pred = rf.predict(X_test)
+
+        acc = accuracy_score(y_test, y_pred)
+        precision = precision_score(y_test, y_pred)
+        recall = recall_score(y_test, y_pred)
+        f1score = f1_score(y_test, y_pred)
+
+        print('acc:', acc)
+        print('precision:', precision)
+        print('recall:', recall)
+        print('f1score:', f1score)
+
+
+    else : 
+
+        if task == 'SingleTweet':
+
+            #hyperparameters
+            BATCH_SIZE = 512                   # number of sentences in each mini-batch
+            LR = 1e-3                          # learning rate 
+            NUM_EPOCHS = 5                     # number of epochs
+            WEIGHT_DECAY = 1e-5                # regularization
+            LSTM_HIDDEN_DIM = 300              # hidden dimension of lstm network 
+            LSTM_NUM_LAYERS = 1                # num of recurrent layers of lstm network 
+            FREEZE = False                     # wheter to make the embedding layer trainable or not              
+            DROPOUT = True                     # wheter to use dropout layer or not  
+            DROPOUT_P = 0.5                    # dropout probability
+            EMBEDDING_MODEL_NAME = 'fastText'  # which embedding model to use 
+
+            config = {
+                'batch_size' : BATCH_SIZE,
+                'lr' : LR,
+                'num_epochs' : NUM_EPOCHS,
+                'weight_decay' : WEIGHT_DECAY,
+                'lstm_hidden_dim' : LSTM_HIDDEN_DIM,
+                'lstm_num_layers': LSTM_NUM_LAYERS,
+                'freeze' : FREEZE,
+                'dropout' : DROPOUT,
+                'dropout_p' : DROPOUT_P,
+                'device' : DEVICE,
+                'emb_model_name': EMBEDDING_MODEL_NAME
+            }
+
+            dataset_df = process_dataset('v1')
             
-            dataset_df = process_dataset_v2(dataset_df,dataset_path_v2)
-        else : 
-            print('found already processed dataset in data folder, retrieving the file...')
-            dataset_df = pd.read_pickle(dataset_path_v2)
-            print('dataset loaded in Dataframe')
-        
-        emb_model = utils.load_emb_model(EMBEDDING_MODEL_NAME)
+            emb_model = utils.load_emb_model(EMBEDDING_MODEL_NAME)
 
-        data_manager = SingleTweetAndMetadataDataManager(dataset_df,DEVICE)
-        data_manager.build_vocab()
-        data_manager.build_emb_matrix(emb_model)
+            data_manager = SingleTweetDataManager(dataset_df,DEVICE)
+            data_manager.build_vocab()
+            data_manager.build_emb_matrix(emb_model)
 
-        # model config parameters dictionary
-        model_cfg = {
-            'pad_idx' : data_manager.vocab.word2int['<pad>'],
-            'freeze_embedding' : FREEZE,  
-            'dropout' : DROPOUT,
-            'dropout_p' : DROPOUT_P,
-            'hidden_dim' : LSTM_HIDDEN_DIM,
-            'num_layers': LSTM_NUM_LAYERS,
-            'metadata_features_dim' : data_manager.metadata_features_dim
-        }
+            # model config parameters dictionary
+            model_cfg = {
+                'pad_idx' : data_manager.vocab.word2int['<pad>'],
+                'freeze_embedding' : FREEZE,  
+                'dropout' : DROPOUT,
+                'dropout_p' : DROPOUT_P,
+                'hidden_dim' : LSTM_HIDDEN_DIM,
+                'num_layers': LSTM_NUM_LAYERS
+            }
 
-        model = SingleTweetAndMetadata_model(data_manager.emb_matrix,model_cfg,DEVICE)
+            model = SingleTweet_model(data_manager.emb_matrix,model_cfg,DEVICE)
 
 
-    elif task == 'MultiTweetAndMetadata':
+        elif task == 'SingleTweetAndMetadata':
 
-        #hyperparameters
-        BATCH_SIZE = 128                   # number of sentences in each mini-batch
-        LR = 1e-3                          # learning rate 
-        NUM_EPOCHS = 5                     # number of epochs
-        WEIGHT_DECAY = 1e-5                # regularization
-        LSTM_HIDDEN_DIM = 300              # hidden dimension of lstm network 
-        LSTM_NUM_LAYERS = 1                # num of recurrent layers of lstm network 
-        FREEZE = False                     # wheter to make the embedding layer trainable or not              
-        DROPOUT = True                     # wheter to use dropout layer or not  
-        DROPOUT_P = 0.3                    # dropout probability
-        EMBEDDING_MODEL_NAME = 'fastText'  # which embedding model to use 
-        NUM_TW_FEATURES = 30               # how many tweet from the same user are exploited to compute metadata features
-        NUM_TW_TXT = 10                    # how many tweet from the same user are used as text for the lstm model 
+            #hyperparameters
+            BATCH_SIZE = 512                   # number of sentences in each mini-batch
+            LR = 1e-3                          # learning rate 
+            NUM_EPOCHS = 5                     # number of epochs
+            WEIGHT_DECAY = 1e-5                # regularization
+            LSTM_HIDDEN_DIM = 300              # hidden dimension of lstm network 
+            LSTM_NUM_LAYERS = 1                # num of recurrent layers of lstm network 
+            FREEZE = False                     # wheter to make the embedding layer trainable or not              
+            DROPOUT = True                     # wheter to use dropout layer or not  
+            DROPOUT_P = 0.5                    # dropout probability
+            EMBEDDING_MODEL_NAME = 'fastText'  # which embedding model to use 
 
-        config = {
-            'batch_size' : BATCH_SIZE,
-            'lr' : LR,
-            'num_epochs' : NUM_EPOCHS,
-            'weight_decay' : WEIGHT_DECAY,
-            'lstm_hidden_dim' : LSTM_HIDDEN_DIM,
-            'lstm_num_layers': LSTM_NUM_LAYERS,
-            'freeze' : FREEZE,
-            'dropout' : DROPOUT,
-            'dropout_p' : DROPOUT_P,
-            'device' : DEVICE,
-            'emb_model_name' : EMBEDDING_MODEL_NAME,
-            'num_tw_features' : NUM_TW_FEATURES,
-            'num_tw_txt' : NUM_TW_TXT
-        }
+            config = {
+                'batch_size' : BATCH_SIZE,
+                'lr' : LR,
+                'num_epochs' : NUM_EPOCHS,
+                'weight_decay' : WEIGHT_DECAY,
+                'lstm_hidden_dim' : LSTM_HIDDEN_DIM,
+                'lstm_num_layers': LSTM_NUM_LAYERS,
+                'freeze' : FREEZE,
+                'dropout' : DROPOUT,
+                'dropout_p' : DROPOUT_P,
+                'device' : DEVICE,
+                'emb_model_name': EMBEDDING_MODEL_NAME
+            }
 
-        dataset_path_v1 = glob.DATA_FOLDER / 'processed_dataset_v1.pkl'
-        dataset_path_v3 = glob.DATA_FOLDER / 'processed_dataset_v3.pkl'
-
-        if not os.path.exists(dataset_path_v3) or glob.force_processing:
-
-            if not os.path.exists(dataset_path_v1) or glob.force_processing:
-                tweets_df, account_df = loadData()
-                dataset_df = process_dataset_v1(tweets_df,dataset_path_v1)
-            else : 
-                dataset_df = pd.read_pickle(dataset_path_v1)
+            dataset_df = process_dataset('v2')
             
-            dataset_df = process_dataset_v3(dataset_df,NUM_TW_FEATURES,NUM_TW_TXT,dataset_path_v2)
-        else : 
-            print('found already processed dataset in data folder, retrieving the file...')
-            dataset_df = pd.read_pickle(dataset_path_v3)
-            print('dataset loaded in Dataframe')
+            emb_model = utils.load_emb_model(EMBEDDING_MODEL_NAME)
+
+            data_manager = SingleTweetAndMetadataDataManager(dataset_df,DEVICE)
+            data_manager.build_vocab()
+            data_manager.build_emb_matrix(emb_model)
+
+            # model config parameters dictionary
+            model_cfg = {
+                'pad_idx' : data_manager.vocab.word2int['<pad>'],
+                'freeze_embedding' : FREEZE,  
+                'dropout' : DROPOUT,
+                'dropout_p' : DROPOUT_P,
+                'hidden_dim' : LSTM_HIDDEN_DIM,
+                'num_layers': LSTM_NUM_LAYERS,
+                'metadata_features_dim' : data_manager.metadata_features_dim
+            }
+
+            model = SingleTweetAndMetadata_model(data_manager.emb_matrix,model_cfg,DEVICE)
+
+
+        elif task == 'MultiTweetAndMetadata':
+
+            #hyperparameters
+            BATCH_SIZE = 128                   # number of sentences in each mini-batch
+            LR = 1e-3                          # learning rate 
+            NUM_EPOCHS = 5                     # number of epochs
+            WEIGHT_DECAY = 1e-5                # regularization
+            LSTM_HIDDEN_DIM = 300              # hidden dimension of lstm network 
+            LSTM_NUM_LAYERS = 1                # num of recurrent layers of lstm network 
+            FREEZE = False                     # wheter to make the embedding layer trainable or not              
+            DROPOUT = True                     # wheter to use dropout layer or not  
+            DROPOUT_P = 0.3                    # dropout probability
+            EMBEDDING_MODEL_NAME = 'fastText'  # which embedding model to use 
+            NUM_TW_FEATURES = 30               # how many tweet from the same user are exploited to compute metadata features
+            NUM_TW_TXT = 10                    # how many tweet from the same user are used as text for the lstm model 
+
+            config = {
+                'batch_size' : BATCH_SIZE,
+                'lr' : LR,
+                'num_epochs' : NUM_EPOCHS,
+                'weight_decay' : WEIGHT_DECAY,
+                'lstm_hidden_dim' : LSTM_HIDDEN_DIM,
+                'lstm_num_layers': LSTM_NUM_LAYERS,
+                'freeze' : FREEZE,
+                'dropout' : DROPOUT,
+                'dropout_p' : DROPOUT_P,
+                'device' : DEVICE,
+                'emb_model_name' : EMBEDDING_MODEL_NAME,
+                'num_tw_features' : NUM_TW_FEATURES,
+                'num_tw_txt' : NUM_TW_TXT
+            }
+
+            dataset_df = process_dataset('v3',{'tw_for_features':NUM_TW_FEATURES,'tw_for_txt':NUM_TW_TXT})
+            
+            emb_model = utils.load_emb_model(EMBEDDING_MODEL_NAME)
+
+            data_manager = MultiTweetAndMetadataDataManager(dataset_df,DEVICE)
+            data_manager.build_vocab()
+            data_manager.build_emb_matrix(emb_model)
+
+            # model config parameters dictionary
+            model_cfg = {
+                'pad_idx' : data_manager.vocab.word2int['<pad>'],
+                'freeze_embedding' : FREEZE,  
+                'dropout' : DROPOUT,
+                'dropout_p' : DROPOUT_P,
+                'hidden_dim' : LSTM_HIDDEN_DIM,
+                'num_layers': LSTM_NUM_LAYERS,
+                'metadata_features_dim' : data_manager.metadata_features_dim
+            }
+
+            model = MultiTweetAndMetadata_model(data_manager.emb_matrix,model_cfg,DEVICE)
         
-        emb_model = utils.load_emb_model(EMBEDDING_MODEL_NAME)
+        elif task == 'TweetAndAccount':
 
-        data_manager = MultiTweetAndMetadataDataManager(dataset_df,DEVICE)
-        data_manager.build_vocab()
-        data_manager.build_emb_matrix(emb_model)
+            #hyperparameters
+            BATCH_SIZE = 128                   # number of sentences in each mini-batch
+            LR = 1e-3                          # learning rate 
+            NUM_EPOCHS = 5                     # number of epochs
+            WEIGHT_DECAY = 1e-5                # regularization
+            LSTM_HIDDEN_DIM = 300              # hidden dimension of lstm network 
+            LSTM_NUM_LAYERS = 1                # num of recurrent layers of lstm network 
+            FREEZE = False                     # wheter to make the embedding layer trainable or not              
+            DROPOUT = True                     # wheter to use dropout layer or not  
+            DROPOUT_P = 0.3                    # dropout probability
+            EMBEDDING_MODEL_NAME = 'fastText'  # which embedding model to use 
+            NUM_TW_FEATURES = 30               # how many tweet from the same user are exploited to compute metadata features
+            NUM_TW_TXT = 10                    # how many tweet from the same user are used as text for the lstm model 
 
-        # model config parameters dictionary
-        model_cfg = {
-            'pad_idx' : data_manager.vocab.word2int['<pad>'],
-            'freeze_embedding' : FREEZE,  
-            'dropout' : DROPOUT,
-            'dropout_p' : DROPOUT_P,
-            'hidden_dim' : LSTM_HIDDEN_DIM,
-            'num_layers': LSTM_NUM_LAYERS,
-            'metadata_features_dim' : data_manager.metadata_features_dim
-        }
+            config = {
+                'batch_size' : BATCH_SIZE,
+                'lr' : LR,
+                'num_epochs' : NUM_EPOCHS,
+                'weight_decay' : WEIGHT_DECAY,
+                'lstm_hidden_dim' : LSTM_HIDDEN_DIM,
+                'lstm_num_layers': LSTM_NUM_LAYERS,
+                'freeze' : FREEZE,
+                'dropout' : DROPOUT,
+                'dropout_p' : DROPOUT_P,
+                'device' : DEVICE,
+                'emb_model_name' : EMBEDDING_MODEL_NAME,
+                'num_tw_features' : NUM_TW_FEATURES,
+                'num_tw_txt' : NUM_TW_TXT
+            }
 
-        model = MultiTweetAndMetadata_model(data_manager.emb_matrix,model_cfg,DEVICE)
+            kwargs = {
+                'v3': {'tw_for_features':NUM_TW_FEATURES,'tw_for_txt':NUM_TW_TXT},
+                'v4': {'normalize':True}
+                }
 
-    
-    weight_positive_class = utils.get_weight_pos_class(dataset_df, DEVICE)
-    criterion = nn.BCEWithLogitsLoss(pos_weight=weight_positive_class)    #Binary CrossEntropy Loss that accept raw input and apply internally the sigmoid 
-    optimizer = optim.Adam(model.parameters(), lr=LR , weight_decay=WEIGHT_DECAY)   #L2 regularization #TODO AdamW
+            dataset_df = process_dataset('v4', kwargs)
+            
+            emb_model = utils.load_emb_model(EMBEDDING_MODEL_NAME)
 
-    train_loader = data_manager.getDataloader('train', BATCH_SIZE, True)
-    val_loader = data_manager.getDataloader('val', BATCH_SIZE, True)
+            data_manager = TweetAndAccountDataManager(dataset_df,DEVICE)
+            data_manager.build_vocab()
+            data_manager.build_emb_matrix(emb_model)
 
-    name = datetime.now(tz = pytz.timezone('Europe/Rome')).strftime("%d/%m/%Y %H:%M:%S") 
-    wandb_mode = 'disabled' if debug else None 
-    wandb.init(project="tweebot", entity="uniboland", name=name, config=config, mode=wandb_mode, tags=[task], dir=str(glob.BASE_PATH))
+            # model config parameters dictionary
+            model_cfg = {
+                'pad_idx' : data_manager.vocab.word2int['<pad>'],
+                'freeze_embedding' : FREEZE,  
+                'dropout' : DROPOUT,
+                'dropout_p' : DROPOUT_P,
+                'hidden_dim' : LSTM_HIDDEN_DIM,
+                'num_layers': LSTM_NUM_LAYERS,
+                'txt_features_dim' : data_manager.text_features_dim,
+                'acc_features_dim' : data_manager.account_features_dim
+            }
 
-    trainer = Trainer(model, DEVICE, criterion, optimizer)
-    trainer.train_and_eval(train_loader, val_loader, NUM_EPOCHS)
+            model = TweetAndAccount_model(data_manager.emb_matrix,model_cfg,DEVICE)  #TODO 
+        
+        
+        weight_positive_class = utils.get_weight_pos_class(dataset_df, DEVICE)
+        criterion = nn.BCEWithLogitsLoss(pos_weight=weight_positive_class)    #Binary CrossEntropy Loss that accept raw input and apply internally the sigmoid 
+        optimizer = optim.Adam(model.parameters(), lr=LR , weight_decay=WEIGHT_DECAY)   #L2 regularization #TODO AdamW
 
-    wandb.finish()
+        train_loader = data_manager.getDataloader('train', BATCH_SIZE, True)
+        val_loader = data_manager.getDataloader('val', BATCH_SIZE, True)
+
+        name = datetime.now(tz = pytz.timezone('Europe/Rome')).strftime("%d/%m/%Y %H:%M:%S") 
+        wandb_mode = 'disabled' if debug else None 
+        wandb.init(project="tweebot", entity="uniboland", name=name, config=config, mode=wandb_mode, tags=[task], dir=str(glob.BASE_PATH))
+
+        trainer = Trainer(model, DEVICE, criterion, optimizer)
+        trainer.train_and_eval(train_loader, val_loader, NUM_EPOCHS)
+
+        wandb.finish()
 
 
 

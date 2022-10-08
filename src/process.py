@@ -1,4 +1,4 @@
-
+import os 
 import re
 import collections
 import math 
@@ -19,6 +19,7 @@ from scipy.stats import zscore
 import Levenshtein
 
 import src.globals as glob 
+from src.data import loadData
 
 nltk.download('stopwords',glob.DATA_FOLDER)
 
@@ -189,7 +190,7 @@ def process_dataset_v2(dataframe : pd.DataFrame, save_path) :
     return df 
 
 
-def process_dataset_v3(dataframe : pd.DataFrame, tw_for_features : int, tw_for_txt : int, save_path) :
+def process_dataset_v3(dataframe : pd.DataFrame, save_path : str, tw_for_features : int, tw_for_txt : int) :
 
     sw = stopwords.words('english')
     df = dataframe.copy(deep=True)
@@ -358,7 +359,8 @@ def process_dataset_v3(dataframe : pd.DataFrame, tw_for_features : int, tw_for_t
     return df 
 
 
-def process_dataset_v3(dataframe : pd.DataFrame, save_path) :
+def process_account_dataset(dataframe : pd.DataFrame, normalize : bool) :
+
     to_drop = ['neighbor','domain','profile.id','profile.id_str','profile.profile_location','profile.entities','profile.utc_offset','profile.time_zone','profile.lang',
 'profile.contributors_enabled','profile.is_translator','profile.is_translation_enabled','profile.profile_background_color','profile.profile_background_image_url','profile.profile_background_image_url_https',
 'profile.profile_background_tile','profile.profile_image_url','profile.profile_image_url_https','profile.profile_link_color','profile.profile_sidebar_border_color','profile.profile_sidebar_fill_color',
@@ -369,6 +371,9 @@ def process_dataset_v3(dataframe : pd.DataFrame, save_path) :
 'profile.listed_count':'listed_count','profile.created_at' :'created_at', 'profile.favourites_count' :'favourites_count','profile.geo_enabled':'geo_enabled',
 'profile.verified':'verified', 'profile.statuses_count':'statuses_count','profile.profile_use_background_image' : 'background_image',
 'profile.default_profile' : 'default_profile', 'profile.default_profile_image':'default_profile_image'}
+
+
+    to_ignore = ['is_verified','has_desc','bot_word_in_name','bot_word_in_screen_name','bot_word_in_description','num_in_name','urls_in_description','def_image','is_protected','use_background_img']
 
     
     def description_len(desc:str):
@@ -414,15 +419,14 @@ def process_dataset_v3(dataframe : pd.DataFrame, save_path) :
         return int(user_age)
 
 
-    def get_avg_tweets_per_day(created_at : str, tot_tweets : str):
+    def frequency(created_at : str, numerator : str):
         age = get_account_age(created_at)
-        avg_tweets = float(int(tot_tweets) / age)
+        avg_tweets = int(numerator) / age 
         return avg_tweets
 
     def lev_name_screenName(name : str, screen_name : str) :
         return Levenshtein.distance(name,screen_name)
 
-    
 
     df = dataframe.copy(deep=True)
 
@@ -432,7 +436,7 @@ def process_dataset_v3(dataframe : pd.DataFrame, save_path) :
 
 
     feature_df = df[['account_id','label','split']].reset_index(drop=True)
-    feature_df['label'] = feature_df['label'].astype(int)
+    feature_df['label'] = feature_df['label'].astype(float)
 
 
     #KOUVELA 
@@ -461,7 +465,7 @@ def process_dataset_v3(dataframe : pd.DataFrame, save_path) :
     #KANTEPE 
     feature_df['is_protected'] = (df['protected'] == 'True').astype(int)
     feature_df['screen_name_entropy'] = df['screen_name'].apply(get_str_entropy)
-    feature_df['tweet_freq'] = df.apply(lambda x: get_avg_tweets_per_day(x['created_at'], x['statuses_count']), axis=1)
+    feature_df['tweet_freq'] = df.apply(lambda x: frequency(x['created_at'], x['statuses_count']), axis=1)
 
     #KNAUTH
     feature_df['is_geo_enabled'] = (df['geo_enabled'] == 'True').astype(int)
@@ -469,13 +473,107 @@ def process_dataset_v3(dataframe : pd.DataFrame, save_path) :
     feature_df['use_background_img'] = (df['background_image'] == 'True').astype(int)
     feature_df['lev_dist_name_screeName'] = df.apply(lambda x: lev_name_screenName(x['name'], x['screen_name']), axis=1)
 
+    #SGBOT 
+    feature_df['followers_growth_rate'] = df.apply(lambda x: frequency(x['created_at'], x['followers_count']), axis=1)
+    feature_df['followings_growth_rate'] = df.apply(lambda x: frequency(x['created_at'], x['friends_count']), axis=1)
+    feature_df['favourites_growth_rate'] = df.apply(lambda x: frequency(x['created_at'], x['favourites_count']), axis=1)
+
+    feature_df = feature_df.drop(to_ignore,axis=1).reset_index(drop=True)  
+
+    if normalize : 
+        columns_names = feature_df.columns.difference(['account_id','label','split'])
+        feature_df[columns_names] = feature_df[columns_names].apply(zscore)
+
+
+    return feature_df 
+
+
+
+def process_dataset(dataset_v : str, kwargs = None) -> pd.DataFrame:
+
+    dataset_path_v1 = glob.DATA_FOLDER / 'processed_dataset_v1.pkl'
+    dataset_path_v2 = glob.DATA_FOLDER / 'processed_dataset_v2.pkl'
+    dataset_path_v3 = glob.DATA_FOLDER / 'processed_dataset_v3.pkl'
+    dataset_path_v4 = glob.DATA_FOLDER / 'processed_dataset_v4.pkl'
+
+    match dataset_v : 
+        case 'v1': 
+
+            if not os.path.exists(dataset_path_v1) or glob.force_processing:
+                tweets_df, account_df = loadData()
+                dataset_df = process_dataset_v1(tweets_df,dataset_path_v1)
+            else : 
+                print('found already processed dataset in data folder, retrieving the file...')
+                dataset_df = pd.read_pickle(dataset_path_v1)
+                print('dataset loaded in Dataframe')
+            
+            return dataset_df
+        
+        case 'v2':
+
+            if not os.path.exists(dataset_path_v2) or glob.force_processing:
+                if not os.path.exists(dataset_path_v1) or glob.force_processing:
+                    tweets_df, account_df = loadData()
+                    dataset_df = process_dataset_v1(tweets_df,dataset_path_v1)
+                else : 
+                    dataset_df = pd.read_pickle(dataset_path_v1)
+            
+                dataset_df = process_dataset_v2(dataset_df,dataset_path_v2)
+            else : 
+                print('found already processed dataset in data folder, retrieving the file...')
+                dataset_df = pd.read_pickle(dataset_path_v2)
+                print('dataset loaded in Dataframe')
+
+            return dataset_df
+        
+        case 'v3':
+
+            if not os.path.exists(dataset_path_v3) or glob.force_processing:
+
+                if not os.path.exists(dataset_path_v1) or glob.force_processing:
+                    tweets_df, account_df = loadData()
+                    dataset_df = process_dataset_v1(tweets_df,dataset_path_v1)
+                else : 
+                    dataset_df = pd.read_pickle(dataset_path_v1)
+                
+                dataset_df = process_dataset_v3(dataset_df,dataset_path_v3,**kwargs)
+            else : 
+                print('found already processed dataset in data folder, retrieving the file...')
+                dataset_df = pd.read_pickle(dataset_path_v3)
+                print('dataset loaded in Dataframe')
+
+            return dataset_df
+
+        case 'v4':
+
+            if not os.path.exists(dataset_path_v4) or glob.force_processing:
+
+                v3_dataset = process_dataset('v3',kwargs['v3'])
+                tweets_df, account_df = loadData()
+                account_df_processed = process_account_dataset(account_df,**kwargs['v4'])
+
+                dataset_df = pd.merge(v3_dataset, account_df_processed, on=['account_id','label','split'])
+
+                assert len(dataset_df) == len(account_df_processed), 'error while merging dataframes'
+
+            else : 
+                print('found already processed dataset in data folder, retrieving the file...')
+                dataset_df = pd.read_pickle(dataset_path_v4)
+                print('dataset loaded in Dataframe')
+            
+            return dataset_df
+        
+        case 'account':
+
+            tweets_df, account_df = loadData()
+            account_df_processed = process_account_dataset(account_df,False)
+
+            return account_df_processed
+            
+        case _ : 
+
+            return NotImplementedError()
 
 
 
 
-
-
-
-
-
-    

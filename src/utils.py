@@ -37,7 +37,6 @@ def load_emb_model(name : str, force_download : bool = False) :
     return emb_model
 
 
-
 def check_OOV_terms(embedding_model: gensim.models.keyedvectors.KeyedVectors, unique_words):
     """
         Given the embedding model and the unique words in the dataframe, determines the out-of-vocabulary words 

@@ -125,6 +125,26 @@ class TweetAndMetadataDataset(Dataset):
             'features': self.features[idx]
             }
 
+class TweetAndMultiFeaturesDataset(Dataset):
+
+    def __init__(self, dataframe: pd.DataFrame):
+        self.tweet = dataframe['processed_tweet']
+        self.label = dataframe['label']
+        self.txt_features = dataframe['text_features']
+        self.acc_features = dataframe['account_features']
+
+
+    def __len__(self):
+        return len(self.label)
+
+    def __getitem__(self, idx):
+        return {
+            'tweet': self.tweet[idx],
+            'label': self.label[idx],
+            'txt_features': self.txt_features[idx],
+            'acc_features': self.acc_features[idx]
+            }
+
 class SingleTweetAndMetadataDataManager(BaseDataManager):  
 
     feature_columns = ['is_rt','url_c','tag_c','hashtag_c','cashtag_c','money_c','email_c','number_c','emoji_c','emoticon_c','len_tweet','stopwords_c','punct_c']
@@ -163,6 +183,49 @@ class MultiTweetAndMetadataDataManager(SingleTweetAndMetadataDataManager):
 
     def __init__(self, dataframe: pd.DataFrame, device):
         super().__init__(dataframe, device)
+
+
+class TweetAndAccountDataManager(BaseDataManager):  
+
+    text_features = ['avg_length','avg_cleaned_length','1+_mention','1+_emot','1+_url','max_hashtag','max_mentions','url_count','hashtag_count','mention_count',
+    'emot_count','punct_count','?!_count','uppercased_count','cash_money_count','rt_count','unique_hashtag_ratio','unique_mention_ratio','unique_rt_ratio','unique_words_ratio']
+
+    account_features = ['has_location', 'has_url', 'name_len', 'screen_name_len', 'description_len', 'followings_count','followers_count',
+    'fofo_ratio', 'tweets_count', 'listed_count', 'num_in_screen_name', 'hashtag_in_description', 'def_profile', 'screen_name_entropy', 'tweet_freq', 'is_geo_enabled',
+    'favourites_count', 'lev_dist_name_screeName', 'followers_growth_rate', 'followings_growth_rate', 'favourites_growth_rate']
+
+
+    def __init__(self, dataframe : pd.DataFrame, device):
+        super().__init__(dataframe, device)
+
+        self.dataset_df['text_features'] = self.dataset_df[self.text_features].values.tolist()
+        self.dataset_df['account_features'] = self.dataset_df[self.account_features].values.tolist()
+        self.text_features_dim = len(self.text_features)
+        self.account_features_dim = len(self.account_features)
+
+        self.train_ds = TweetAndMultiFeaturesDataset(self.dataset_df[self.dataset_df['split'] == 'train'].reset_index(drop=True))
+        self.val_ds = TweetAndMultiFeaturesDataset(self.dataset_df[self.dataset_df['split'] == 'val'].reset_index(drop=True))
+        self.test_ds = TweetAndMultiFeaturesDataset(self.dataset_df[self.dataset_df['split'] == 'test'].reset_index(drop=True))
+    
+    def custom_collate(self, batch):
+        
+        tweet_lengths = torch.tensor([len(example['tweet']) for example in batch]) #, device=self.device -> for pack_padded should be on cpu so if only used by that don't put it on gpu
+
+        txt_features = torch.tensor([example['txt_features'] for example in batch], device=self.device)
+        acc_features = torch.tensor([example['acc_features'] for example in batch], device=self.device) 
+
+        numerized_tweets = [self.numericalize(example['tweet']) for example in batch]
+        padded_tweets = rnn.pad_sequence(numerized_tweets, batch_first = True, padding_value = self.vocab.word2int['<pad>']).to(self.device)
+
+        labels = torch.tensor([example['label'] for example in batch],device=self.device) #(5)
+
+        return {
+            'tweets': padded_tweets,
+            'txt_features' : txt_features,
+            'acc_features' : acc_features,
+            'labels': labels,
+            'lengths': tweet_lengths
+        }
 
 
 
