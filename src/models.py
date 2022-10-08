@@ -211,7 +211,7 @@ class TweetAndAccount_model(nn.Module):
         self.dropout = nn.Dropout(cfg['dropout_p']) 
 
         self.linear1 = nn.Linear(cfg['txt_features_dim'] + cfg['hidden_dim']*2,cfg['hidden_dim'])   
-        self.linear2 = nn.Linear(cfg['account_features_dim'] + cfg['hidden_dim'],1)   
+        self.linear2 = nn.Linear(cfg['acc_features_dim'] + cfg['hidden_dim'],1)   
 
     
     def name(self):

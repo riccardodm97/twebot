@@ -44,8 +44,8 @@ def process_dataset_v1(dataframe : pd.DataFrame , save_path ) :
 
 
     def replace(word : str):
-        # if not word.isascii():
-        #     return ['']
+        if not word.isascii():
+            return ['']
         if bool(re.search(r'http[s]?|.com',word)):
             return ['url']
         elif bool(re.search(r'\d',word)):
@@ -94,7 +94,7 @@ def process_dataset_v1(dataframe : pd.DataFrame , save_path ) :
     dataframe['processed_tweet'] = dataframe['tweet'].replace(TO_REPLACE,REPLACE_WITH,regex=True,inplace=False)
     dataframe['processed_tweet'] = dataframe['processed_tweet'].apply(further_process)
 
-    # dataframe = dataframe[dataframe['processed_tweet'].map(lambda x: len(x)) > 2].reset_index(drop=True)     #TODO leave it or not ?? 
+    dataframe = dataframe[dataframe['processed_tweet'].map(lambda x: len(x)) > 2].reset_index(drop=True)     #TODO leave it or not ?? 
 
     dataframe['label'] = dataframe['label'].astype(float)  
 
@@ -498,7 +498,7 @@ def process_dataset(dataset_v : str, kwargs = None) -> pd.DataFrame:
 
     match dataset_v : 
         case 'v1': 
-
+            print('starting dataset processing')
             if not os.path.exists(dataset_path_v1) or glob.force_processing:
                 tweets_df, account_df = loadData()
                 dataset_df = process_dataset_v1(tweets_df,dataset_path_v1)
@@ -510,7 +510,7 @@ def process_dataset(dataset_v : str, kwargs = None) -> pd.DataFrame:
             return dataset_df
         
         case 'v2':
-
+            print('starting dataset processing')
             if not os.path.exists(dataset_path_v2) or glob.force_processing:
                 if not os.path.exists(dataset_path_v1) or glob.force_processing:
                     tweets_df, account_df = loadData()
@@ -527,7 +527,7 @@ def process_dataset(dataset_v : str, kwargs = None) -> pd.DataFrame:
             return dataset_df
         
         case 'v3':
-
+            print('starting dataset processing')
             if not os.path.exists(dataset_path_v3) or glob.force_processing:
 
                 if not os.path.exists(dataset_path_v1) or glob.force_processing:
@@ -545,7 +545,7 @@ def process_dataset(dataset_v : str, kwargs = None) -> pd.DataFrame:
             return dataset_df
 
         case 'v4':
-
+            print('starting dataset processing')
             if not os.path.exists(dataset_path_v4) or glob.force_processing:
 
                 v3_dataset = process_dataset('v3',kwargs['v3'])
@@ -553,8 +553,11 @@ def process_dataset(dataset_v : str, kwargs = None) -> pd.DataFrame:
                 account_df_processed = process_account_dataset(account_df,**kwargs['v4'])
 
                 dataset_df = pd.merge(v3_dataset, account_df_processed, on=['account_id','label','split'])
+                print('done')
+                print('saving processed dataset to file')
+                dataset_df.to_pickle(dataset_path_v4)   #save to file
 
-                assert len(dataset_df) == len(account_df_processed), 'error while merging dataframes'
+                #assert len(dataset_df) == len(account_df_processed), 'error while merging dataframes'
 
             else : 
                 print('found already processed dataset in data folder, retrieving the file...')
@@ -565,8 +568,10 @@ def process_dataset(dataset_v : str, kwargs = None) -> pd.DataFrame:
         
         case 'account':
 
+            print('processing dataset')
             tweets_df, account_df = loadData()
             account_df_processed = process_account_dataset(account_df,False)
+            print('done')
 
             return account_df_processed
             

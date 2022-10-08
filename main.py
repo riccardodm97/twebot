@@ -30,7 +30,7 @@ def main(task : str, debug : bool) :
         #hyperparameters
         NUM_ESTIMATORS = 100
         CLASS_WEIGHT = 'balanced'
-        RND_STATE = 42
+        RND_STATE = 18
 
         dataset_df = process_dataset('account')
 
@@ -164,13 +164,13 @@ def main(task : str, debug : bool) :
             #hyperparameters
             BATCH_SIZE = 128                   # number of sentences in each mini-batch
             LR = 1e-3                          # learning rate 
-            NUM_EPOCHS = 5                     # number of epochs
-            WEIGHT_DECAY = 1e-5                # regularization
+            NUM_EPOCHS = 10                    # number of epochs
+            WEIGHT_DECAY = 1e-4                # regularization
             LSTM_HIDDEN_DIM = 300              # hidden dimension of lstm network 
             LSTM_NUM_LAYERS = 1                # num of recurrent layers of lstm network 
             FREEZE = False                     # wheter to make the embedding layer trainable or not              
             DROPOUT = True                     # wheter to use dropout layer or not  
-            DROPOUT_P = 0.3                    # dropout probability
+            DROPOUT_P = 0.5                    # dropout probability
             EMBEDDING_MODEL_NAME = 'fastText'  # which embedding model to use 
             NUM_TW_FEATURES = 30               # how many tweet from the same user are exploited to compute metadata features
             NUM_TW_TXT = 10                    # how many tweet from the same user are used as text for the lstm model 
@@ -218,12 +218,12 @@ def main(task : str, debug : bool) :
             BATCH_SIZE = 128                   # number of sentences in each mini-batch
             LR = 1e-3                          # learning rate 
             NUM_EPOCHS = 5                     # number of epochs
-            WEIGHT_DECAY = 1e-5                # regularization
+            WEIGHT_DECAY = 1e-3                # regularization
             LSTM_HIDDEN_DIM = 300              # hidden dimension of lstm network 
             LSTM_NUM_LAYERS = 1                # num of recurrent layers of lstm network 
             FREEZE = False                     # wheter to make the embedding layer trainable or not              
             DROPOUT = True                     # wheter to use dropout layer or not  
-            DROPOUT_P = 0.3                    # dropout probability
+            DROPOUT_P = 0.5                    # dropout probability
             EMBEDDING_MODEL_NAME = 'fastText'  # which embedding model to use 
             NUM_TW_FEATURES = 30               # how many tweet from the same user are exploited to compute metadata features
             NUM_TW_TXT = 10                    # how many tweet from the same user are used as text for the lstm model 
@@ -293,7 +293,7 @@ def main(task : str, debug : bool) :
 if __name__ == "__main__":
     parser = ArgumentParser()
 
-    parser.add_argument("-t","--task", dest="task",help="Task to perform", choices=["Account", "SingleTweet","SingleTweetAndMetadata","MultiTweetAndMetadata,TweetAndAccount"], required=True)
+    parser.add_argument("-t","--task", dest="task",help="Task to perform", choices=["Account", "SingleTweet","SingleTweetAndMetadata","MultiTweetAndMetadata","TweetAndAccount"], required=True)
     parser.add_argument("--debug",dest="debug",help="wheter to log on wandb or not", action="store_true")   
     args = parser.parse_args()
 
