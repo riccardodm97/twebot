@@ -15,7 +15,8 @@ import nltk
 from nltk.tokenize import TweetTokenizer
 from nltk.corpus import stopwords
 from nltk.corpus import stopwords
-from scipy.stats import zscore 
+#from scipy.stats import zscore 
+from sklearn.preprocessing import StandardScaler
 import Levenshtein
 
 import src.globals as glob 
@@ -182,7 +183,11 @@ def process_dataset_v2(dataframe : pd.DataFrame, save_path) :
 
     column_names = ['url_c','tag_c','hashtag_c','cashtag_c','money_c','email_c','number_c','emoji_c','emoticon_c','len_tweet','stopwords_c','punct_c']
 
-    df[column_names] = df[column_names].apply(zscore)
+    train_df = df[df['split'] =='train']
+    scaler = StandardScaler()
+    scaler.fit(train_df[column_names])
+
+    df[column_names] = scaler.transform(df[column_names])
 
     print('saving processed dataset to file')
     df.to_pickle(save_path)   #save to file
@@ -351,7 +356,13 @@ def process_dataset_v3(dataframe : pd.DataFrame, save_path : str, tw_for_feature
 
     column_names = ['avg_length','avg_cleaned_length','1+_mention','1+_emot','1+_url','max_hashtag','max_mentions','url_count','hashtag_count','mention_count','emot_count','punct_count','?!_count','uppercased_count','cash_money_count','rt_count']
     #column_names.extend(['unique_hashtag_ratio','unique_mention_ratio','unique_rt_ratio','unique_words_ratio'])  #TODO ??
-    df[column_names] = df[column_names].apply(zscore)
+    #df[column_names] = df[column_names].apply(zscore)
+
+    train_df = df[df['split'] =='train']
+    scaler = StandardScaler()
+    scaler.fit(train_df[column_names])
+
+    df[column_names] = scaler.transform(df[column_names])
 
     print('saving processed dataset to file')
     df.to_pickle(save_path)   #save to file
@@ -482,7 +493,12 @@ def process_account_dataset(dataframe : pd.DataFrame, normalize : bool) :
 
     if normalize : 
         columns_names = feature_df.columns.difference(['account_id','label','split'])
-        feature_df[columns_names] = feature_df[columns_names].apply(zscore)
+        #feature_df[columns_names] = feature_df[columns_names].apply(zscore)
+        train_df = feature_df[feature_df['split'] =='train']
+        scaler = StandardScaler()
+        scaler.fit(train_df[columns_names])
+
+        feature_df[columns_names] = scaler.transform(feature_df[columns_names])
 
 
     return feature_df 
