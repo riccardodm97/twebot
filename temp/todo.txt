@@ -7,6 +7,10 @@ DA SAPERE PER LA PRESENTAZIONE
 - ANOVA , Pearson Correlation 
 - Correlation betwee features -> https://stats.stackexchange.com/questions/232534/does-correlated-input-data-lead-to-overfitting-with-neural-networks
 
+DA FARE PER LA PRESENTAZIONE:
+- spiegare perche Random Forest
+- tabella risultati
+- commentare perchè usate certe features
 
 TODO RNN:
     - OOV:
