@@ -181,7 +181,12 @@ def process_dataset_v2(dataframe : pd.DataFrame, save_path) :
     df['stopwords_c'] = df['processed_tweet'].apply(stopwords_count)
     df['punct_c'] = df['processed_tweet'].apply(punct_count)
 
-    column_names = ['url_c','tag_c','hashtag_c','cashtag_c','money_c','email_c','number_c','emoji_c','emoticon_c','len_tweet','stopwords_c','punct_c']
+    to_ignore = ['number_c','stopwords_c','punct_c']
+    df = df.drop(to_ignore,axis=1).reset_index(drop=True)  
+
+    # column_names = ['url_c','tag_c','hashtag_c','cashtag_c','money_c','email_c','number_c','emoji_c','emoticon_c','len_tweet',
+    # 'stopwords_c','punct_c']
+    column_names = df.columns.difference(['tweet','account_id','label','split','processed_tweet','is_rt'])
 
     train_df = df[df['split'] =='train']
     scaler = StandardScaler()
@@ -352,9 +357,16 @@ def process_dataset_v3(dataframe : pd.DataFrame, save_path : str, tw_for_feature
     df['tweet'] = df['tweet'].apply(' '.join)
     df['processed_tweet'] = df['processed_tweet'].apply(lambda x : list(flatten(x)))
 
+    # REMOVE NON USEFUL FEATURES 
+
+    to_ignore = ['?!_count','cash_money_count','unique_mention_ratio','uppercased_count']
+    df = df.drop(to_ignore,axis=1).reset_index(drop=True)  
+
     # APPLY NORMALIZATION 
 
-    column_names = ['avg_length','avg_cleaned_length','1+_mention','1+_emot','1+_url','max_hashtag','max_mentions','url_count','hashtag_count','mention_count','emot_count','punct_count','?!_count','uppercased_count','cash_money_count','rt_count']
+    column_names = df.columns.difference(['tweet','account_id','label','split','processed_tweet','n_tweet','n_processed_tweet',])
+    # column_names = ['avg_length','avg_cleaned_length','1+_mention','1+_emot','1+_url','max_hashtag','max_mentions','url_count',
+    # 'hashtag_count','mention_count','emot_count','punct_count','?!_count','uppercased_count','cash_money_count','rt_count']
     #column_names.extend(['unique_hashtag_ratio','unique_mention_ratio','unique_rt_ratio','unique_words_ratio'])  #TODO ??
     #df[column_names] = df[column_names].apply(zscore)
 

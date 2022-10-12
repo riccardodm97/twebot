@@ -147,7 +147,7 @@ class TweetAndMultiFeaturesDataset(Dataset):
 
 class SingleTweetAndMetadataDataManager(BaseDataManager):  
 
-    feature_columns = ['is_rt','url_c','tag_c','hashtag_c','cashtag_c','money_c','email_c','number_c','emoji_c','emoticon_c','len_tweet','stopwords_c','punct_c']
+    feature_columns = ['is_rt','url_c','tag_c','hashtag_c','cashtag_c','money_c','email_c','emoji_c','emoticon_c','len_tweet']
 
     def __init__(self, dataframe : pd.DataFrame, device):
         super().__init__(dataframe, device)
@@ -178,8 +178,10 @@ class SingleTweetAndMetadataDataManager(BaseDataManager):
         }
 
 class MultiTweetAndMetadataDataManager(SingleTweetAndMetadataDataManager):
-    feature_columns = ['avg_length','avg_cleaned_length','1+_mention','1+_emot','1+_url','max_hashtag','max_mentions','url_count','hashtag_count','mention_count',
-    'emot_count','punct_count','?!_count','uppercased_count','cash_money_count','rt_count','unique_hashtag_ratio','unique_mention_ratio','unique_rt_ratio','unique_words_ratio']  
+    
+    feature_columns = ['avg_length', 'avg_cleaned_length', '1+_mention', '1+_emot', '1+_url', 'max_hashtag', 'max_mention', 
+    'unique_words_ratio', 'url_count', 'hashtag_count', 'unique_hashtag_ratio', 'mention_count', 'emot_count', 'punct_count', 
+    'rt_count', 'unique_rt_ratio']
 
     def __init__(self, dataframe: pd.DataFrame, device):
         super().__init__(dataframe, device)
