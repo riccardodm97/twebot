@@ -25,7 +25,7 @@ class Trainer():
         self.criterion = criterion.to(self.device) if isinstance(criterion, nn.Module) else criterion 
         self.optimizer = optimizer
 
-        self.models_dir =glob.BASE_PATH / 'models'
+        self.models_dir = glob.BASE_PATH / 'models'
 
 
     def train_loop(self, dataloader : DataLoader):
@@ -159,8 +159,14 @@ class Trainer():
     
     def test(self, test_loader):
 
+        print('loading model state from folder')
         self.model.load_state_dict(torch.load(f'models/{self.model.name()}.pt'))
+        print('loaded')
 
-        self.eval_loop(test_loader)
+        test_metrics = self.eval_loop(test_loader)
+        test_epoch_loss, test_epoch_acc, test_epoch_f1, test_epoch_prec, test_epoch_rec, test_epoch_time = test_metrics
+
+        print(f'Test -> Loss: {test_epoch_loss:.3f} | Acc: {test_epoch_acc:.3f} | F1: {test_epoch_f1:.3f} | Prec: {test_epoch_prec:.3f} | Rec: {test_epoch_rec:.3f} ')
+
         
         

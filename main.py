@@ -273,7 +273,7 @@ def main(task : str, debug : bool) :
                 'acc_features_dim' : data_manager.account_features_dim
             }
 
-            model = TweetAndAccount_model(data_manager.emb_matrix,model_cfg,DEVICE)  #TODO 
+            model = TweetAndAccount_model(data_manager.emb_matrix,model_cfg,DEVICE) 
         
         
         weight_positive_class = utils.get_weight_pos_class(dataset_df, DEVICE)
@@ -282,13 +282,16 @@ def main(task : str, debug : bool) :
 
         train_loader = data_manager.getDataloader('train', BATCH_SIZE, True)
         val_loader = data_manager.getDataloader('val', BATCH_SIZE, True)
+        test_loader = data_manager.getDataloader('test', BATCH_SIZE, True)
+
 
         name = datetime.now(tz = pytz.timezone('Europe/Rome')).strftime("%d/%m/%Y %H:%M:%S") 
         wandb_mode = 'disabled' if debug else None 
         wandb.init(project="tweebot", entity="uniboland", name=name, config=config, mode=wandb_mode, tags=[task], dir=str(glob.BASE_PATH))
 
         trainer = Trainer(model, DEVICE, criterion, optimizer)
-        trainer.train_and_eval(train_loader, val_loader, NUM_EPOCHS)
+        #trainer.train_and_eval(train_loader, val_loader, NUM_EPOCHS)
+        trainer.test(test_loader)
 
         wandb.finish()
 

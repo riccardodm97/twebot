@@ -88,8 +88,6 @@ def process_dataset_v1(dataframe : pd.DataFrame , save_path ) :
                 
         return sentence
 
-    print('starting data processing')
-
     dataframe['processed_tweet'] = dataframe['tweet'].replace(TO_REPLACE,REPLACE_WITH,regex=True,inplace=False)
     dataframe['processed_tweet'] = dataframe['processed_tweet'].apply(further_process)
 
@@ -362,7 +360,7 @@ def process_dataset_v3(dataframe : pd.DataFrame, save_path : str, tw_for_feature
 
     # APPLY NORMALIZATION 
 
-    column_names = df.columns.difference(['tweet','account_id','label','split','processed_tweet','n_tweet','n_processed_tweet',])
+    column_names = df.columns.difference(['tweet','account_id','label','split','processed_tweet','n_tweet','n_processed_tweet'])
     # column_names = ['avg_length','avg_cleaned_length','1+_mention','1+_emot','1+_url','max_hashtag','max_mentions','url_count',
     # 'hashtag_count','mention_count','emot_count','punct_count','?!_count','uppercased_count','cash_money_count','rt_count']
     #column_names.extend(['unique_hashtag_ratio','unique_mention_ratio','unique_rt_ratio','unique_words_ratio'])  #TODO ??
@@ -579,7 +577,6 @@ def process_dataset(dataset_v : str, kwargs = None) -> pd.DataFrame:
                 account_df_processed = process_account_dataset(account_df,**kwargs['v4'])
 
                 dataset_df = pd.merge(v3_dataset, account_df_processed, on=['account_id','label','split'])
-                print('done')
                 print('saving processed dataset to file')
                 dataset_df.to_pickle(dataset_path_v4)   #save to file
 
@@ -597,7 +594,6 @@ def process_dataset(dataset_v : str, kwargs = None) -> pd.DataFrame:
             print('processing dataset')
             tweets_df, account_df = loadData()
             account_df_processed = process_account_dataset(account_df,False)
-            print('done')
 
             return account_df_processed
             

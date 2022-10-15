@@ -63,7 +63,7 @@ def check_OOV_terms(embedding_model: gensim.models.keyedvectors.KeyedVectors, un
 
 def metrics(y_true, y_pred):
     """
-        Compute accuracy and f1-score for an epoch 
+        Compute accuracy, f1-score, precision and recall for an epoch 
     """
     acc = accuracy_score(y_true, y_pred)
 

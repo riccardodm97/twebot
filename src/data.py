@@ -178,7 +178,7 @@ class SingleTweetAndMetadataDataManager(BaseDataManager):
 
 class MultiTweetAndMetadataDataManager(SingleTweetAndMetadataDataManager):
     
-    feature_columns = ['avg_length', 'avg_cleaned_length', '1+_mention', '1+_emot', '1+_url', 'max_hashtag', 'max_mention', 
+    feature_columns = ['avg_length', 'avg_cleaned_length', '1+_mention', '1+_emot', '1+_url', 'max_hashtag', 'max_mentions', 
     'unique_words_ratio', 'url_count', 'hashtag_count', 'unique_hashtag_ratio', 'mention_count', 'emot_count', 'punct_count', 
     'rt_count', 'unique_rt_ratio']
 
@@ -189,7 +189,7 @@ class MultiTweetAndMetadataDataManager(SingleTweetAndMetadataDataManager):
 class TweetAndAccountDataManager(BaseDataManager):  
 
     text_features = ['avg_length','avg_cleaned_length','1+_mention','1+_emot','1+_url','max_hashtag','max_mentions','url_count','hashtag_count','mention_count',
-    'emot_count','punct_count','?!_count','uppercased_count','cash_money_count','rt_count','unique_hashtag_ratio','unique_mention_ratio','unique_rt_ratio','unique_words_ratio']
+    'emot_count','punct_count','rt_count','unique_hashtag_ratio','unique_rt_ratio','unique_words_ratio']
 
     account_features = ['has_location', 'has_url', 'name_len', 'screen_name_len', 'description_len', 'followings_count','followers_count',
     'fofo_ratio', 'tweets_count', 'listed_count', 'num_in_screen_name', 'hashtag_in_description', 'def_profile', 'screen_name_entropy', 'tweet_freq', 'is_geo_enabled',
