@@ -1,7 +1,7 @@
 # IMPORTS 
-from pathlib import Path 
+import json
+from pathlib import Path
 
-import json 
 import pandas as pd
 
 DATA_FOLDER = Path().absolute().parent / 'data'

@@ -1,14 +1,13 @@
+import json
 from collections import OrderedDict, namedtuple
-import json 
 
-from torch.utils.data import Dataset, DataLoader
+import numpy as np
+import pandas as pd
+import torch
 import torch.nn.utils.rnn as rnn
-import torch 
-import numpy as np 
-import pandas as pd 
+from torch.utils.data import DataLoader, Dataset
 
 import src.globals as glob
-
 
 Vocab = namedtuple('Vocabulary',['word2int','int2word','unique_words'])
 

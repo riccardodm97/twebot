@@ -1,15 +1,16 @@
-import random 
-import os 
+import os
+import random
 
+import gdown
 import gensim
 import gensim.downloader as gloader
+import pandas as pd
+import torch
 from gensim.models import KeyedVectors
-import gdown 
-import pandas as pd 
-from sklearn.metrics import f1_score, accuracy_score, precision_score, recall_score
-import torch 
+from sklearn.metrics import (accuracy_score, f1_score, precision_score,
+                             recall_score)
 
-import src.globals as glob 
+import src.globals as glob
 
 
 def load_emb_model(name : str, force_download : bool = False) :

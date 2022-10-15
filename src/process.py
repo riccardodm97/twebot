@@ -1,25 +1,23 @@
-import os 
-import re
 import collections
-import math 
+import math
+import os
+import re
 from datetime import datetime
-from string import punctuation
 from statistics import mean
+from string import punctuation
 
 import emoji
-from ttp import ttp 
-from emot.core import emot 
-import pandas as pd 
-from pandas.core.common import flatten
-import nltk 
-from nltk.tokenize import TweetTokenizer
-from nltk.corpus import stopwords
-from nltk.corpus import stopwords
-#from scipy.stats import zscore 
-from sklearn.preprocessing import StandardScaler
 import Levenshtein
+import nltk
+import pandas as pd
+from emot.core import emot
+from nltk.corpus import stopwords
+from nltk.tokenize import TweetTokenizer
+from pandas.core.common import flatten
+from sklearn.preprocessing import StandardScaler
+from ttp import ttp
 
-import src.globals as glob 
+import src.globals as glob
 from src.data import loadData
 
 nltk.download('stopwords',glob.DATA_FOLDER)

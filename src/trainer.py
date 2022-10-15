@@ -1,16 +1,16 @@
+import os
 import time
-import os 
 
-import wandb 
-from tqdm import tqdm
 import numpy as np
+import torch
+import torch.nn as nn
 from torch import Tensor
-import torch 
-import torch.nn as nn 
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 
+import src.globals as glob
+import wandb
 from src.utils import metrics
-import src.globals as glob 
 
 
 class Trainer():
