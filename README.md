@@ -4,7 +4,7 @@ In recent years, online social media platforms have become an indispensable part
 by suspicious and manipulative social media bots, governed by software but disguising as human users. 
 The problem of detecting bots has strong implications. For example, bots have been used to sway political elections by distorting online discourse or to manipulate the stock market. 
 
-In this project we tackle this problem, by focusing on data. Our goal was to understand what kind of information is needed to accurately discriminate bot from humans on the Twitter social media platform. To do this we decided to feed our models more and more data from multiple sources to discover what piece of information works best for this task.
+In this project we tackle the problem, by focusing on data. Our goal was to understand what kind of information is needed to accurately discriminate bot from humans on the Twitter social media platform. To do this we decided to feed our models more and more data from multiple sources to discover what piece of information works best for this task.
 
 We used (nearly) the same model at all steps, with increasingly more data to learn from: 
 - the text from only one tweet per user 
