@@ -18,7 +18,7 @@ All the experiments are conducted on the [TwiBot-20](https://arxiv.org/abs/2106.
 
 We demonstrate that, from just one single tweet, is still possible to discriminate bots from humans, with a acceptable level of accuracy. At the same time, the results clearly show that larger amount of information is needed to achieve the best performance. 
 
-## **Results**
+### **Results**
 
 | Model | Accuracy | Recall | F1-score |
 | --- | --- | --- | --- |
