@@ -16,7 +16,7 @@ We decided to start from simple text of a single tweet; in fact, given the same 
 
 All the experiments are conducted on the [TwiBot-20](https://arxiv.org/abs/2106.13088) dataset. 
 
-We demonstrate that, from just one single tweet, is still possible to discriminate bots from humans, with a acceptable level of accuracy. At the same time, the results clearly show that larger amount of information is needed to achieve the best performance. 
+We demonstrate that, from just one single tweet, is still possible to discriminate bots from humans, with an acceptable level of accuracy. At the same time, the results clearly show that larger amount of information is needed to achieve the best performance. 
 
 ### **Results**
 
