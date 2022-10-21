@@ -287,7 +287,7 @@ def main(task : str, debug : bool) :
 
         name = datetime.now(tz = pytz.timezone('Europe/Rome')).strftime("%d/%m/%Y %H:%M:%S") 
         wandb_mode = 'disabled' if debug else None 
-        wandb.init(project="tweebot", entity="uniboland", name=name, config=config, mode=wandb_mode, tags=[task], dir=str(glob.BASE_PATH))
+        wandb.init(project="YOUR_PROJECT", entity="YOUR_ENTITY", name=name, config=config, mode=wandb_mode, tags=[task], dir=str(glob.BASE_PATH))
 
         trainer = Trainer(model, DEVICE, criterion, optimizer)
         #trainer.train_and_eval(train_loader, val_loader, NUM_EPOCHS)
