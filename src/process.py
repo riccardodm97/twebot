@@ -102,7 +102,7 @@ def process_dataset_v1(dataframe : pd.DataFrame , save_path ) :
         
 
 
-def process_dataset_v2(dataframe : pd.DataFrame, save_path) :
+def process_dataset_v2(dataframe : pd.DataFrame, save_path, normalize : bool) :
 
     sw = stopwords.words('english')
 
@@ -185,10 +185,11 @@ def process_dataset_v2(dataframe : pd.DataFrame, save_path) :
     column_names = df.columns.difference(['tweet','account_id','label','split','processed_tweet','is_rt'])
 
     train_df = df[df['split'] =='train']
-    scaler = StandardScaler()
-    scaler.fit(train_df[column_names])
+    if normalize == True:
+        scaler = StandardScaler()
+        scaler.fit(train_df[column_names])
 
-    df[column_names] = scaler.transform(df[column_names])
+        df[column_names] = scaler.transform(df[column_names])
 
     print('saving processed dataset to file')
     df.to_pickle(save_path)   #save to file
@@ -196,7 +197,7 @@ def process_dataset_v2(dataframe : pd.DataFrame, save_path) :
     return df 
 
 
-def process_dataset_v3(dataframe : pd.DataFrame, save_path : str, tw_for_features : int, tw_for_txt : int) :
+def process_dataset_v3(dataframe : pd.DataFrame, save_path : str, tw_for_features : int, tw_for_txt : int, normalize : bool) :
 
     sw = stopwords.words('english')
     df = dataframe.copy(deep=True)
@@ -367,10 +368,11 @@ def process_dataset_v3(dataframe : pd.DataFrame, save_path : str, tw_for_feature
     #df[column_names] = df[column_names].apply(zscore)
 
     train_df = df[df['split'] =='train']
-    scaler = StandardScaler()
-    scaler.fit(train_df[column_names])
+    if normalize == True:
+        scaler = StandardScaler()
+        scaler.fit(train_df[column_names])
 
-    df[column_names] = scaler.transform(df[column_names])
+        df[column_names] = scaler.transform(df[column_names])
 
     print('saving processed dataset to file')
     df.to_pickle(save_path)   #save to file
@@ -519,6 +521,7 @@ def process_dataset(dataset_v : str, kwargs = None) -> pd.DataFrame:
     dataset_path_v2 = glob.DATA_FOLDER / 'processed_dataset_v2.pkl'
     dataset_path_v3 = glob.DATA_FOLDER / 'processed_dataset_v3.pkl'
     dataset_path_v4 = glob.DATA_FOLDER / 'processed_dataset_v4.pkl'
+    dataset_path_v5 = glob.DATA_FOLDER / 'processed_dataset_v5.pkl'
 
     match dataset_v : 
         case 'v1': 
@@ -542,7 +545,7 @@ def process_dataset(dataset_v : str, kwargs = None) -> pd.DataFrame:
                 else : 
                     dataset_df = pd.read_pickle(dataset_path_v1)
             
-                dataset_df = process_dataset_v2(dataset_df,dataset_path_v2)
+                dataset_df = process_dataset_v2(dataset_df,dataset_path_v2, **kwargs['v2'])
             else : 
                 print('found already processed dataset in data folder, retrieving the file...')
                 dataset_df = pd.read_pickle(dataset_path_v2)
@@ -588,6 +591,24 @@ def process_dataset(dataset_v : str, kwargs = None) -> pd.DataFrame:
                 print('dataset loaded in Dataframe')
             
             return dataset_df
+
+        case 'v5':
+            print('starting dataset processing')
+            if not os.path.exists(dataset_path_v5) or glob.force_processing:
+                v3_dataset = process_dataset('v3',kwargs['v3'])
+                tweets_df, account_df = loadData()
+                account_df_processed = process_account_dataset(account_df,**kwargs['v5'])
+
+                dataset_df = pd.merge(v3_dataset, account_df_processed, on=['account_id','label','split'])
+                print('saving processed dataset to file')
+                dataset_df.to_pickle(dataset_path_v5)   #save to file
+
+            else : 
+                print('found already processed dataset in data folder, retrieving the file...')
+                dataset_df = pd.read_pickle(dataset_path_v5)
+                print('dataset loaded in Dataframe')
+            
+            return dataset_df
         
         case 'account':
 
@@ -596,11 +617,6 @@ def process_dataset(dataset_v : str, kwargs = None) -> pd.DataFrame:
             account_df_processed = process_account_dataset(account_df,False)
 
             return account_df_processed
-            
+
         case _ : 
-
             return NotImplementedError()
-
-
-
-

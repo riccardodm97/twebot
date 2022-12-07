@@ -1,4 +1,3 @@
-
 from argparse import ArgumentParser
 from datetime import datetime
 
@@ -29,7 +28,116 @@ def main(task : str, debug : bool) :
     DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(f'running on {DEVICE}')
 
-    if task == 'Account' : 
+    if task == 'MetadataSingleTweet': 
+
+        #hyperparameters
+        NUM_ESTIMATORS = 100
+        CLASS_WEIGHT = 'balanced'
+        RND_STATE = 18
+
+        kwargs = {
+            'v2': {'normalize':False}
+            }
+
+        dataset_df = process_dataset('v2', kwargs)
+
+        train = dataset_df[dataset_df['split'] == 'train'].reset_index(drop=True)
+        val = dataset_df[dataset_df['split'] == 'val'].reset_index(drop=True)
+        test = dataset_df[dataset_df['split'] == 'test'].reset_index(drop=True)
+
+        X_train, y_train = train.drop(columns=["account_id", "tweet", "label", "split", "processed_tweet"], axis=1), train["label"]
+        X_val, y_val = val.drop(columns=["account_id", "tweet", "label", "split", "processed_tweet"], axis=1), val["label"]
+        X_test, y_test = test.drop(columns=["account_id", "tweet", "label", "split", "processed_tweet"], axis=1), test["label"]
+
+        rf = RandomForestClassifier(n_estimators=NUM_ESTIMATORS, class_weight=CLASS_WEIGHT, random_state=RND_STATE)
+        rf.fit(X_train, y_train)
+
+        y_pred = rf.predict(X_test)
+
+        acc = accuracy_score(y_test, y_pred)
+        precision = precision_score(y_test, y_pred)
+        recall = recall_score(y_test, y_pred)
+        f1score = f1_score(y_test, y_pred)
+
+        print('acc:', acc)
+        print('precision:', precision)
+        print('recall:', recall)
+        print('f1score:', f1score)
+
+    elif task == 'MetadataMultiTweet': 
+
+        #hyperparameters
+        NUM_ESTIMATORS = 100
+        CLASS_WEIGHT = 'balanced'
+        RND_STATE = 18
+        NUM_TW_FEATURES = 30               # how many tweet from the same user are exploited to compute metadata features
+        NUM_TW_TXT = 10                    # how many tweet from the same user are used as text for the lstm model 
+
+        dataset_df = process_dataset('v3', {'tw_for_features':NUM_TW_FEATURES,'tw_for_txt':NUM_TW_TXT, 'normalize': False})
+
+        train = dataset_df[dataset_df['split'] == 'train'].reset_index(drop=True)
+        val = dataset_df[dataset_df['split'] == 'val'].reset_index(drop=True)
+        test = dataset_df[dataset_df['split'] == 'test'].reset_index(drop=True)
+
+        X_train, y_train = train.drop(columns=["account_id", "tweet", "label", "split", "processed_tweet", "n_tweet", "n_processed_tweet"], axis=1), train["label"]
+        X_val, y_val = val.drop(columns=["account_id", "tweet", "label", "split", "processed_tweet", "n_tweet", "n_processed_tweet"], axis=1), val["label"]
+        X_test, y_test = test.drop(columns=["account_id", "tweet", "label", "split", "processed_tweet", "n_tweet", "n_processed_tweet"], axis=1), test["label"]
+
+        rf = RandomForestClassifier(n_estimators=NUM_ESTIMATORS, class_weight=CLASS_WEIGHT, random_state=RND_STATE)
+        rf.fit(X_train, y_train)
+
+        y_pred = rf.predict(X_test)
+
+        acc = accuracy_score(y_test, y_pred)
+        precision = precision_score(y_test, y_pred)
+        recall = recall_score(y_test, y_pred)
+        f1score = f1_score(y_test, y_pred)
+
+        print('acc:', acc)
+        print('precision:', precision)
+        print('recall:', recall)
+        print('f1score:', f1score)
+
+    elif task == "AccountAndMetadataMultiTweet":
+
+        #hyperparameters
+        NUM_ESTIMATORS = 100
+        CLASS_WEIGHT = 'balanced'
+        RND_STATE = 18
+        NUM_TW_FEATURES = 30               # how many tweet from the same user are exploited to compute metadata features
+        NUM_TW_TXT = 10                    # how many tweet from the same user are used as text for the lstm model 
+
+        kwargs = {
+                'v3': {'tw_for_features':NUM_TW_FEATURES,'tw_for_txt':NUM_TW_TXT, 'normalize': False},
+                'v5': {'normalize': False}
+                }
+
+        dataset_df = process_dataset('v5', kwargs)
+
+        train = dataset_df[dataset_df['split'] == 'train'].reset_index(drop=True)
+        val = dataset_df[dataset_df['split'] == 'val'].reset_index(drop=True)
+        test = dataset_df[dataset_df['split'] == 'test'].reset_index(drop=True)
+
+        X_train, y_train = train.drop(columns=["account_id", "tweet", "label", "split", "processed_tweet", "n_tweet", "n_processed_tweet"], axis=1), train["label"]
+        X_val, y_val = val.drop(columns=["account_id", "tweet", "label", "split", "processed_tweet", "n_tweet", "n_processed_tweet"], axis=1), val["label"]
+        X_test, y_test = test.drop(columns=["account_id", "tweet", "label", "split", "processed_tweet", "n_tweet", "n_processed_tweet"], axis=1), test["label"]
+
+        rf = RandomForestClassifier(n_estimators=NUM_ESTIMATORS, class_weight=CLASS_WEIGHT, random_state=RND_STATE)
+        rf.fit(X_train, y_train)
+
+        y_pred = rf.predict(X_test)
+
+        acc = accuracy_score(y_test, y_pred)
+        precision = precision_score(y_test, y_pred)
+        recall = recall_score(y_test, y_pred)
+        f1score = f1_score(y_test, y_pred)
+
+        print('acc:', acc)
+        print('precision:', precision)
+        print('recall:', recall)
+        print('f1score:', f1score)
+
+    elif task == 'Account' : 
 
         #hyperparameters
         NUM_ESTIMATORS = 100
@@ -60,7 +168,6 @@ def main(task : str, debug : bool) :
         print('precision:', precision)
         print('recall:', recall)
         print('f1score:', f1score)
-
 
     else : 
 
@@ -141,7 +248,11 @@ def main(task : str, debug : bool) :
                 'emb_model_name': EMBEDDING_MODEL_NAME
             }
 
-            dataset_df = process_dataset('v2')
+            kwargs = {
+            'v2': {'normalize':True}
+            }
+
+            dataset_df = process_dataset('v2', kwargs)
             
             emb_model = utils.load_emb_model(EMBEDDING_MODEL_NAME)
 
@@ -300,7 +411,7 @@ def main(task : str, debug : bool) :
 if __name__ == "__main__":
     parser = ArgumentParser()
 
-    parser.add_argument("-t","--task", dest="task",help="Task to perform", choices=["Account", "SingleTweet","SingleTweetAndMetadata","MultiTweetAndMetadata","TweetAndAccount"], required=True)
+    parser.add_argument("-t","--task", dest="task",help="Task to perform", choices=["MetadataSingleTweet", "MetadataMultiTweet", "AccountAndMetadataMultiTweet", "Account", "SingleTweet","SingleTweetAndMetadata","MultiTweetAndMetadata","TweetAndAccount"], required=True)
     parser.add_argument("--debug",dest="debug",help="wheter to log on wandb or not", action="store_true")   
     args = parser.parse_args()
 
