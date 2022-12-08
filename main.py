@@ -21,7 +21,7 @@ from src.process import process_dataset
 from src.trainer import Trainer
 
 
-def main(task : str, debug : bool) :
+def main(task : str, action : str, debug : bool) :
 
     print(f"Starting task {task}")
 
@@ -397,22 +397,34 @@ def main(task : str, debug : bool) :
 
 
         name = datetime.now(tz = pytz.timezone('Europe/Rome')).strftime("%d/%m/%Y %H:%M:%S") 
-        wandb_mode = 'disabled' if debug else None 
+        wandb_mode = 'disabled' #if debug else None 
         wandb.init(project="tweebot", entity="uniboland", name=name, config=config, mode=wandb_mode, tags=[task], dir=str(glob.BASE_PATH))
 
         trainer = Trainer(model, DEVICE, criterion, optimizer)
-        #trainer.train_and_eval(train_loader, val_loader, NUM_EPOCHS)
-        trainer.test(test_loader)
+        if action == "Train": trainer.train_and_eval(train_loader, val_loader, NUM_EPOCHS)
+        else: trainer.test(test_loader)
 
         wandb.finish()
-
-
 
 if __name__ == "__main__":
     parser = ArgumentParser()
 
-    parser.add_argument("-t","--task", dest="task",help="Task to perform", choices=["MetadataSingleTweet", "MetadataMultiTweet", "AccountAndMetadataMultiTweet", "Account", "SingleTweet","SingleTweetAndMetadata","MultiTweetAndMetadata","TweetAndAccount"], required=True)
+    parser.add_argument("-t","--task", dest="task",help="Task to perform", 
+        choices=
+            # Random Forest
+            ["MetadataSingleTweet", 
+            "MetadataMultiTweet", 
+            "AccountAndMetadataMultiTweet", 
+            "Account",
+            # LSTM
+            "SingleTweet",
+            "SingleTweetAndMetadata",
+            "MultiTweetAndMetadata",
+            "TweetAndAccount"],
+            required=True)
+
+    parser.add_argument("-a", "--action", dest="action", help="Train or Test the model", choices=["Train", "Test"])
     parser.add_argument("--debug",dest="debug",help="wheter to log on wandb or not", action="store_true")   
     args = parser.parse_args()
 
-    main(args.task,args.debug)  
+    main(args.task, args.action, args.debug)  
