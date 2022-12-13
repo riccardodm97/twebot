@@ -7,8 +7,7 @@ import gensim.downloader as gloader
 import pandas as pd
 import torch
 from gensim.models import KeyedVectors
-from sklearn.metrics import (accuracy_score, f1_score, precision_score,
-                             recall_score)
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, roc_curve, roc_auc_score
 
 import src.globals as glob
 
@@ -73,7 +72,9 @@ def metrics(y_true, y_pred):
 
     rec = recall_score(y_true,y_pred,average="macro")
 
-    return acc, f1, prec, rec
+    auc_score = roc_auc_score(y_true, y_pred)
+
+    return acc, f1, prec, rec, auc_score
 
 
 def get_weight_pos_class(dataframe : pd.DataFrame, device) :

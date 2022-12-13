@@ -6,8 +6,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import (accuracy_score, f1_score, precision_score,
-                             recall_score)
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, roc_curve, roc_auc_score
+import matplotlib.pyplot as plt
 
 import src.globals as glob
 import src.utils as utils
@@ -53,16 +53,32 @@ def main(task : str, action : str, debug : bool) :
         rf.fit(X_train, y_train)
 
         y_pred = rf.predict(X_test)
+        y_prob = rf.predict_proba(X_test)[:,1] # keep probabilities for the positive outcome only
 
         acc = accuracy_score(y_test, y_pred)
         precision = precision_score(y_test, y_pred)
         recall = recall_score(y_test, y_pred)
         f1score = f1_score(y_test, y_pred)
 
+        fpr, tpr, _ = roc_curve(y_test, y_prob)
+        p_fpr, p_tpr, _ = roc_curve(y_test, [0] * len(y_test))
+        auc_score = roc_auc_score(y_test, y_prob)
+
         print('acc:', acc)
         print('precision:', precision)
         print('recall:', recall)
-        print('f1score:', f1score)
+        print('f1 score:', f1score)
+        print('auc score:', auc_score)
+
+        plt.style.use('seaborn')
+        plt.plot(fpr, tpr, linestyle='--',color='orange', label='MetadataSingleTweet')
+        plt.plot(p_fpr, p_tpr, linestyle='--', color='blue')
+        plt.title('ROC curve')
+        plt.xlabel('False Positive Rate')
+        plt.ylabel('True Positive rate')
+
+        plt.legend(loc='best')
+        plt.show();
 
     elif task == 'MetadataMultiTweet': 
 
@@ -87,16 +103,80 @@ def main(task : str, action : str, debug : bool) :
         rf.fit(X_train, y_train)
 
         y_pred = rf.predict(X_test)
+        y_prob = rf.predict_proba(X_test)[:,1] # keep probabilities for the positive outcome only
 
         acc = accuracy_score(y_test, y_pred)
         precision = precision_score(y_test, y_pred)
         recall = recall_score(y_test, y_pred)
         f1score = f1_score(y_test, y_pred)
 
+        fpr, tpr, _ = roc_curve(y_test, y_prob)
+        p_fpr, p_tpr, _ = roc_curve(y_test, [0] * len(y_test))
+        auc_score = roc_auc_score(y_test, y_prob)
+
         print('acc:', acc)
         print('precision:', precision)
         print('recall:', recall)
-        print('f1score:', f1score)
+        print('f1 score:', f1score)
+        print('auc score:', auc_score)
+
+        plt.style.use('seaborn')
+        plt.plot(fpr, tpr, linestyle='--',color='orange', label='MetadataMultiTweet')
+        plt.plot(p_fpr, p_tpr, linestyle='--', color='blue')
+        plt.title('ROC curve')
+        plt.xlabel('False Positive Rate')
+        plt.ylabel('True Positive rate')
+
+        plt.legend(loc='best')
+        plt.show();
+
+    elif task == 'Account' : 
+
+        #hyperparameters
+        NUM_ESTIMATORS = 100
+        CLASS_WEIGHT = 'balanced'
+        RND_STATE = 18
+
+        dataset_df = process_dataset('account')
+
+        train = dataset_df[dataset_df['split'] == 'train'].reset_index(drop=True)
+        val = dataset_df[dataset_df['split'] == 'val'].reset_index(drop=True)
+        test = dataset_df[dataset_df['split'] == 'test'].reset_index(drop=True)
+
+        X_train, y_train = train.drop(columns=["account_id", "label", "split"], axis=1), train["label"]
+        X_val, y_val = val.drop(columns=["account_id", "label", "split"], axis=1), val["label"]
+        X_test, y_test = test.drop(columns=["account_id", "label", "split"], axis=1), test["label"]
+
+        rf = RandomForestClassifier(n_estimators=NUM_ESTIMATORS, class_weight=CLASS_WEIGHT, random_state=RND_STATE)
+        rf.fit(X_train, y_train)
+
+        y_pred = rf.predict(X_test)
+        y_prob = rf.predict_proba(X_test)[:,1] # keep probabilities for the positive outcome only
+
+        acc = accuracy_score(y_test, y_pred)
+        precision = precision_score(y_test, y_pred)
+        recall = recall_score(y_test, y_pred)
+        f1score = f1_score(y_test, y_pred)
+
+        fpr, tpr, _ = roc_curve(y_test, y_prob)
+        p_fpr, p_tpr, _ = roc_curve(y_test, [0] * len(y_test))
+        auc_score = roc_auc_score(y_test, y_prob)
+
+        print('acc:', acc)
+        print('precision:', precision)
+        print('recall:', recall)
+        print('f1 score:', f1score)
+        print('auc score:', auc_score)
+
+        plt.style.use('seaborn')
+        plt.plot(fpr, tpr, linestyle='--',color='orange', label='Account')
+        plt.plot(p_fpr, p_tpr, linestyle='--', color='blue')
+        plt.title('ROC curve')
+        plt.xlabel('False Positive Rate')
+        plt.ylabel('True Positive rate')
+
+        plt.legend(loc='best')
+        plt.show();
 
     elif task == "AccountAndMetadataMultiTweet":
 
@@ -126,48 +206,32 @@ def main(task : str, action : str, debug : bool) :
         rf.fit(X_train, y_train)
 
         y_pred = rf.predict(X_test)
+        y_prob = rf.predict_proba(X_test)[:,1] # keep probabilities for the positive outcome only
 
         acc = accuracy_score(y_test, y_pred)
         precision = precision_score(y_test, y_pred)
         recall = recall_score(y_test, y_pred)
         f1score = f1_score(y_test, y_pred)
 
-        print('acc:', acc)
-        print('precision:', precision)
-        print('recall:', recall)
-        print('f1score:', f1score)
-
-    elif task == 'Account' : 
-
-        #hyperparameters
-        NUM_ESTIMATORS = 100
-        CLASS_WEIGHT = 'balanced'
-        RND_STATE = 18
-
-        dataset_df = process_dataset('account')
-
-        train = dataset_df[dataset_df['split'] == 'train'].reset_index(drop=True)
-        val = dataset_df[dataset_df['split'] == 'val'].reset_index(drop=True)
-        test = dataset_df[dataset_df['split'] == 'test'].reset_index(drop=True)
-
-        X_train, y_train = train.drop(columns=["account_id", "label", "split"], axis=1), train["label"]
-        X_val, y_val = val.drop(columns=["account_id", "label", "split"], axis=1), val["label"]
-        X_test, y_test = test.drop(columns=["account_id", "label", "split"], axis=1), test["label"]
-
-        rf = RandomForestClassifier(n_estimators=NUM_ESTIMATORS, class_weight=CLASS_WEIGHT, random_state=RND_STATE)
-        rf.fit(X_train, y_train)
-
-        y_pred = rf.predict(X_test)
-
-        acc = accuracy_score(y_test, y_pred)
-        precision = precision_score(y_test, y_pred)
-        recall = recall_score(y_test, y_pred)
-        f1score = f1_score(y_test, y_pred)
+        fpr, tpr, _ = roc_curve(y_test, y_prob)
+        p_fpr, p_tpr, _ = roc_curve(y_test, [0] * len(y_test))
+        auc_score = roc_auc_score(y_test, y_prob)
 
         print('acc:', acc)
         print('precision:', precision)
         print('recall:', recall)
-        print('f1score:', f1score)
+        print('f1 score:', f1score)
+        print('auc score:', auc_score)
+
+        plt.style.use('seaborn')
+        plt.plot(fpr, tpr, linestyle='--',color='orange', label='AccountAndMetadataMultiTweet')
+        plt.plot(p_fpr, p_tpr, linestyle='--', color='blue')
+        plt.title('ROC curve')
+        plt.xlabel('False Positive Rate')
+        plt.ylabel('True Positive rate')
+
+        plt.legend(loc='best')
+        plt.show();
 
     else : 
 
