@@ -185,7 +185,5 @@ class Trainer():
         plt.ylabel('True Positive rate')
 
         plt.legend(loc='best')
-        plt.show();
-
-        
-        
+        plt.savefig(f'pres/res/{self.model.name()}_ROC_curve.png')
+        plt.close()
