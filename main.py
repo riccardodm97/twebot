@@ -452,7 +452,7 @@ def main(task : str, action : str, debug : bool) :
         
         
         weight_positive_class = utils.get_weight_pos_class(dataset_df, DEVICE)
-        criterion = nn.BCEWithLogitsLoss(pos_weight=weight_positive_class)    #Binary CrossEntropy Loss that accept raw input and apply internally the sigmoid 
+        criterion = nn.BCELoss()    #Binary CrossEntropy Loss that accept raw input and apply internally the sigmoid 
         optimizer = optim.Adam(model.parameters(), lr=LR , weight_decay=WEIGHT_DECAY)   #L2 regularization #TODO AdamW
 
         train_loader = data_manager.getDataloader('train', BATCH_SIZE, True)
@@ -491,4 +491,5 @@ if __name__ == "__main__":
     parser.add_argument("--debug",dest="debug",help="wheter to log on wandb or not", action="store_true")   
     args = parser.parse_args()
 
-    main(args.task, args.action, args.debug)  
+    main(args.task, args.action, args.debug)
+    # main("SingleTweet", "Train", True)  

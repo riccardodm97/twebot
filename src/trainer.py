@@ -7,6 +7,8 @@ import torch.nn as nn
 from torch import Tensor
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+import matplotlib.pyplot as plt
+from sklearn.metrics import roc_curve
 
 import src.globals as glob
 import wandb
@@ -38,7 +40,7 @@ class Trainer():
         tot_loss = 0
         
         #aggregate all the predictions and corresponding true labels (and claim ids) in tensors 
-        all_pred , all_targ = np.empty(dataset_size), np.empty(dataset_size)
+        all_pred, all_prob, all_targ = np.empty(dataset_size), np.empty(dataset_size), np.empty(dataset_size)
 
         self.model.train()
     
@@ -46,28 +48,29 @@ class Trainer():
 
             self.optimizer.zero_grad()            
 
-            predictions : Tensor = self.model(batch_data)   #generate predictions 
-            predictions = predictions.squeeze(1)
+            probabilities : Tensor = self.model(batch_data)   #generate predictions 
+            probabilities = probabilities.squeeze(-1)
 
-            loss = self.criterion(predictions, batch_data['labels'])      #compute the loss 
+            loss = self.criterion(probabilities, batch_data['labels'].type(torch.float32))      #compute the loss 
 
             #backward pass 
             loss.backward()
             self.optimizer.step()
 
-            pred = (predictions > 0.0 ).detach().int().cpu().numpy()           #get class label 
+            pred = (probabilities > 0.5 ).detach().int().cpu().numpy()           #get class label 
 
             start = batch_id * batch_size
             end = start + batch_size
 
             #concatenate the new tensors with the one computed in previous steps
             all_pred[start:end] = pred 
+            all_prob[start:end] = probabilities .detach().cpu().numpy()
             all_targ[start:end] = batch_data['labels'].detach().cpu().numpy()       
 
             tot_loss += loss.item()    #accumulate batch loss 
 
 
-        acc, f1, prec, rec, auc_score = metrics(all_targ,all_pred)
+        acc, f1, prec, rec, auc_score = metrics(all_targ,all_pred, all_prob)
 
         loss = tot_loss/(batch_id+1)    #mean loss 
 
@@ -86,7 +89,7 @@ class Trainer():
         tot_loss = 0
         
         #aggregate all the predictions and corresponding true labels (and claim ids) in tensors 
-        all_pred , all_targ = np.empty(dataset_size), np.empty(dataset_size)
+        all_pred, all_prob, all_targ = np.empty(dataset_size), np.empty(dataset_size), np.empty(dataset_size)
         
         self.model.eval()   #model in eval mode 
         
@@ -94,28 +97,29 @@ class Trainer():
         
             for batch_id, batch_data in enumerate(tqdm(dataloader)):
                 
-                predictions : Tensor = self.model(batch_data)   #generate predictions 
-                predictions = predictions.squeeze(1)
+                probabilities : Tensor = self.model(batch_data)   #generate predictions 
+                probabilities = probabilities.squeeze(-1)
 
-                loss = self.criterion(predictions, batch_data['labels'])      #compute the loss 
+                loss = self.criterion(probabilities, batch_data['labels'].type(torch.float32))      #compute the loss 
 
-                pred = (predictions > 0.0 ).detach().int().cpu().numpy()        #get class label 
+                pred = (probabilities > 0.5 ).detach().int().cpu().numpy()        #get class label 
                 start = batch_id * batch_size
                 end = start + batch_size
 
                 #concatenate the new tensors with the one computed in previous steps
                 all_pred[start:end] = pred 
+                all_prob[start:end] = probabilities.detach().cpu().numpy()
                 all_targ[start:end] = batch_data['labels'].detach().cpu().numpy()     
 
                 tot_loss += loss.item()   #accumulate batch loss 
                 
-        acc, f1, prec, rec, auc_score = metrics(all_targ,all_pred)
+        acc, f1, prec, rec, auc_score = metrics(all_targ,all_pred, all_prob)
 
         loss = tot_loss/(batch_id+1)   #mean loss 
 
         end_time = time.perf_counter()
 
-        return loss, acc, f1, prec, rec, auc_score, end_time-start_time
+        return loss, acc, f1, prec, rec, auc_score, end_time-start_time, all_targ, all_pred, all_prob
 
     
     def train_and_eval(self, train_loader, val_loader, num_epochs):
@@ -138,7 +142,7 @@ class Trainer():
             tot_epoch_time = end_time-start_time          
 
             train_epoch_loss, train_epoch_acc, train_epoch_f1, train_epoch_prec, train_epoch_rec, train_auc_score, train_epoch_time = train_metrics
-            val_epoch_loss, val_epoch_acc, val_epoch_f1, val_epoch_prec, val_epoch_rec, val_auc_score, val_epoch_time = val_metrics
+            val_epoch_loss, val_epoch_acc, val_epoch_f1, val_epoch_prec, val_epoch_rec, val_auc_score, val_epoch_time, _, _, _ = val_metrics
 
             if val_epoch_f1 >= best_f1:
                 best_f1 = val_epoch_f1
@@ -166,9 +170,22 @@ class Trainer():
         print('loaded')
 
         test_metrics = self.eval_loop(test_loader)
-        test_epoch_loss, test_epoch_acc, test_epoch_f1, test_epoch_prec, test_epoch_rec, test_auc_score, test_epoch_time = test_metrics
+        test_epoch_loss, test_epoch_acc, test_epoch_f1, test_epoch_prec, test_epoch_rec, test_auc_score, _, test_targ, test_pred, test_prob = test_metrics
 
         print(f'Test -> Loss: {test_epoch_loss:.3f} | Acc: {test_epoch_acc:.3f} | F1: {test_epoch_f1:.3f} | Prec: {test_epoch_prec:.3f} | Rec: {test_epoch_rec:.3f} | AUC score: {test_auc_score:.3f}')
+
+        fpr, tpr, _ = roc_curve(test_targ, test_prob)
+        p_fpr, p_tpr, _ = roc_curve(test_targ, [0] * len(test_targ))
+
+        plt.style.use('seaborn')
+        plt.plot(fpr, tpr, linestyle='--',color='orange', label=self.model.name())
+        plt.plot(p_fpr, p_tpr, linestyle='--', color='blue')
+        plt.title('ROC curve')
+        plt.xlabel('False Positive Rate')
+        plt.ylabel('True Positive rate')
+
+        plt.legend(loc='best')
+        plt.show();
 
         
         

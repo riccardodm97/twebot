@@ -60,7 +60,7 @@ def check_OOV_terms(embedding_model: gensim.models.keyedvectors.KeyedVectors, un
     return oov_words
 
 
-def metrics(y_true, y_pred):
+def metrics(y_true, y_pred, y_prob):
     """
         Compute accuracy, f1-score, precision and recall for an epoch 
     """
@@ -72,7 +72,7 @@ def metrics(y_true, y_pred):
 
     rec = recall_score(y_true,y_pred,average="macro")
 
-    auc_score = roc_auc_score(y_true, y_pred)
+    auc_score = roc_auc_score(y_true, y_prob)
 
     return acc, f1, prec, rec, auc_score
 

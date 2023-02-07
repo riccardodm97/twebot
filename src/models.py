@@ -21,7 +21,9 @@ class SingleTweet_model(nn.Module):
 
         self.compress = nn.Linear(cfg['hidden_dim']*2,cfg['hidden_dim'])
 
-        self.classifier = nn.Linear(cfg['hidden_dim'],1)   
+        self.classifier = nn.Linear(cfg['hidden_dim'],1) 
+
+        self.sigmoid = nn.Sigmoid()  
     
     def name(self):
         return 'SingleTweet_model'
@@ -61,7 +63,7 @@ class SingleTweet_model(nn.Module):
         if self.cfg['dropout']: out = self.dropout(out)
 
         #final classification 
-        predictions = self.classifier(out) #predictions [batch_size, 1]
+        predictions = self.sigmoid(self.classifier(out)) #predictions [batch_size, 1]
 
         return predictions
 
@@ -82,7 +84,9 @@ class SingleTweetAndMetadata_model(nn.Module):
 
         self.compress = nn.Linear(cfg['hidden_dim']*2,cfg['hidden_dim'])
 
-        self.classifier = nn.Linear(cfg['metadata_features_dim'] + cfg['hidden_dim'],1)   
+        self.classifier = nn.Linear(cfg['metadata_features_dim'] + cfg['hidden_dim'],1)
+
+        self.sigmoid = nn.Sigmoid()    
     
     def name(self):
         return 'SingleTweetAndMetadata_model'
@@ -124,7 +128,7 @@ class SingleTweetAndMetadata_model(nn.Module):
         if self.cfg['dropout']: out = self.dropout(out)
 
         #final classification 
-        predictions = self.classifier(out) #predictions [batch_size, 1]
+        predictions = self.sigmoid(self.classifier(out)) #predictions [batch_size, 1]
 
         return predictions
 
@@ -146,7 +150,9 @@ class MultiTweetAndMetadata_model(nn.Module):
         self.compress = nn.Linear(cfg['hidden_dim']*2,cfg['hidden_dim'])
 
         self.linear1 = nn.Linear(cfg['metadata_features_dim'] + cfg['hidden_dim'],cfg['metadata_features_dim'] + cfg['hidden_dim'])   
-        self.linear2 = nn.Linear(cfg['metadata_features_dim'] + cfg['hidden_dim'],1)   
+        self.linear2 = nn.Linear(cfg['metadata_features_dim'] + cfg['hidden_dim'],1)  
+
+        self.sigmoid = nn.Sigmoid() 
 
     
     def name(self):
@@ -187,7 +193,7 @@ class MultiTweetAndMetadata_model(nn.Module):
         out = torch.cat([compressed_out,batch_data['features']],dim=1)  # out = [batch_size, hidden_dim + features_dim]
         out = self.linear1(out)                                         # out = [batch_size, hidden_dim + features_dim]
         out = F.relu(out)
-        out = self.linear2(out)                                         # out = [batch_size, 1]
+        out = self.sigmoid(self.linear2(out))                           # out = [batch_size, 1]
 
         return out
 
@@ -208,6 +214,8 @@ class TweetAndAccount_model(nn.Module):
 
         self.linear1 = nn.Linear(cfg['txt_features_dim'] + cfg['hidden_dim']*2,cfg['hidden_dim'])   
         self.linear2 = nn.Linear(cfg['acc_features_dim'] + cfg['hidden_dim'],1)   
+
+        self.sigmoid = nn.Sigmoid()
 
     
     def name(self):
@@ -246,6 +254,6 @@ class TweetAndAccount_model(nn.Module):
         out = self.linear1(out)                                         # out = [batch_size, hidden_dim]
         out = F.relu(out)
         out = torch.cat([out,batch_data['acc_features']],dim=1)         # out = [batch_size, hidden_dim + acc_features_dim]
-        out = self.linear2(out)                                         # out = [batch_size, 1]
+        out = self.sigmoid(self.linear2(out))                           # out = [batch_size, 1]
 
         return out
